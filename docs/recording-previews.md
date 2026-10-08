@@ -41,17 +41,19 @@ Pillow and a PNG sequence is unnecessarily slow. Do not remove frame checks or
 switch to PNG intermediates when extending the tool.
 
 These are menu previews, not gameplay tests or headset layout verification.
-For upright ES-DE previews, first use a separate capture-only table copy with
+For clean landscape ES-DE previews, first use a separate capture-only table copy with
 an overhead camera, hidden scenery, and normal gameplay dependencies. Never
 change the live table's camera for a preview. Inspect a capture to determine
 the playfield bounds; use `--video-filter` to crop the native QOI frames before
 resizing. For example, a verified centered playfield in a 5120x2160 capture:
-`--video-filter "crop=1120:2160:2000:0,scale=540:1080:force_original_aspect_ratio=decrease,pad=540:1080:(ow-iw)/2:(oh-ih)/2"`.
+`--video-filter "crop=1120:2160:2000:0,scale=540:1080:force_original_aspect_ratio=decrease,pad=540:1080:(ow-iw)/2:(oh-ih)/2,transpose=2"`.
 These bounds are specific to that capture resolution and camera, not universal.
+The approved orientation is landscape: rear/top at LEFT, flippers/bottom at RIGHT.
+`transpose=2` rotates the intermediate upright playfield counterclockwise.
 Extract the matching screenshot from the finished movie with FFmpeg. Back up
 existing ES-DE screenshots and videos before replacing them. The October 8
 pilot uses Stargate, Spider-Man Classic and Crystal Palace Hotel; the rest of
-the library is still in its previous format pending review of those samples.
+the library awaits the remaining media batch; those landscape samples are approved.
 Inspect VPX's runtime log and review the video before calling a table healthy.
 The tool currently requires the sequential `Playfield_00001_tmp.qoi` capture
 format used by VPX 10.8.1 rev5436; other formats need an explicit adaptation.
