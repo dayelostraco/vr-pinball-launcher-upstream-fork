@@ -296,6 +296,10 @@ id>"}`).
 The script never overwrites an existing file unless `--force` names that
 table, and it never downloads ROMs.
 
+For missing table videos, use `tools/record_previews.py` to record silent VPX
+attract previews for this launcher and ES-DE. See
+[Recording previews](docs/recording-previews.md) for setup and examples.
+
 ## Setup in Unity
 
 ### Scene Setup
