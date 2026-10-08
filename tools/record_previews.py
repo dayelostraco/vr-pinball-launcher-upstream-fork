@@ -102,7 +102,7 @@ def record(args, table):
     subprocess.run([str(args.ffmpeg), "-hide_banner", "-loglevel", "error", "-y",
                     "-framerate", str(args.fps), "-i",
                     str(capture / "Playfield_%05d_tmp.qoi"), "-frames:v",
-                    str(args.frames), "-vf", f"scale={args.width}:-2",
+                    str(args.frames), "-vf", args.video_filter or f"scale={args.width}:-2",
                     "-c:v", "libx264", "-crf", "22", "-pix_fmt", "yuv420p",
                     "-movflags", "+faststart", str(temp_video)], check=True)
     os.replace(temp_video, video)
@@ -122,6 +122,7 @@ def main():
     ap.add_argument("--frames", type=int, default=120)
     ap.add_argument("--fps", type=int, default=10)
     ap.add_argument("--width", type=int, default=1280)
+    ap.add_argument("--video-filter", help="Explicit FFmpeg filter instead of default scaling; crop native QOI frames before resizing")
     ap.add_argument("--timeout", type=int, default=180)
     ap.add_argument("--force", action="store_true", help="Replace explicitly requested video files")
     ap.add_argument("--dry-run", action="store_true")
