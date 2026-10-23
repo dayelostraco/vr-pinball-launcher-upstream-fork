@@ -102,6 +102,10 @@ Edit `launcher-config.json` in the same folder as the executable:
 
 ### Running some tables on a different VPX version
 
+For PinOne/SDL background joystick input and startup keyboard focus when using
+a wrapper, see [VPX background input helper](docs/vpx-background-input.md),
+including build, installation, profile configuration, and troubleshooting.
+
 Some tables only work on an older VPX (for example 10.8.0). Define each extra install in `vpxProfiles`, then assign tables to it in `tableProfiles` by file name without `.vpx` (case-insensitive). Every other table uses `vpinballExecutable`.
 
 ```json
