@@ -137,6 +137,14 @@ namespace VRLauncher
             ChangeView(1);
         }
 
+        public void JumpLetter(int direction)
+        {
+            view.JumpLetter(direction);
+            scroll = 0f;
+            scrollVelocity = 0f;
+            Assign();
+        }
+
         public void PreviousView()
         {
             ChangeView(-1);

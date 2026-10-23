@@ -37,6 +37,7 @@ namespace VRLauncher
         public event Action ToggleFavorite;
         public event Action CycleView;
         public event Action PreviousView;
+        public event Action<int> JumpLetter;
         public event Action Quit;
 
         public bool InputEnabled { get; set; } = true;
@@ -51,6 +52,7 @@ namespace VRLauncher
         private readonly ButtonEdge xButton = new ButtonEdge();
         private readonly StickRepeat stick = new StickRepeat();
         private readonly ViewStickLatch viewStick = new ViewStickLatch();
+        private readonly ViewStickLatch letterStick = new ViewStickLatch();
         private readonly HoldTimer quitHold = new HoldTimer(QuitHoldSeconds);
         private XRInputDevice left;
         private XRInputDevice right;
@@ -86,6 +88,7 @@ namespace VRLauncher
 
             float stickX = 0f;
             Vector2 leftStick = Vector2.zero;
+            Vector2 rightStick = Vector2.zero;
             bool yHeld = false;
 
             if (left.isValid)
@@ -105,8 +108,11 @@ namespace VRLauncher
                 if (right.TryGetFeatureValue(XRCommonUsages.trigger, out float rt) && rightTrigger.Update(rt)) nav += 1;
                 if (right.TryGetFeatureValue(XRCommonUsages.primaryButton, out bool a) && aButton.Update(a)) launch = true;
                 if (right.TryGetFeatureValue(XRCommonUsages.secondaryButton, out bool b) && bButton.Update(b)) favorite = true;
-                if (right.TryGetFeatureValue(XRCommonUsages.primary2DAxis, out Vector2 rs) && Mathf.Abs(rs.x) > Mathf.Abs(stickX)) stickX = rs.x;
+                if (right.TryGetFeatureValue(XRCommonUsages.primary2DAxis, out Vector2 rs)) rightStick = rs;
             }
+
+            int letterStep = letterStick.Update(rightStick.x, rightStick.y);
+            if (Mathf.Abs(rightStick.x) >= Mathf.Abs(rightStick.y) && Mathf.Abs(rightStick.x) > Mathf.Abs(stickX)) stickX = rightStick.x;
 
             nav += stick.Update(stickX, dt);
             if (quitHold.Update(yHeld, dt)) quit = true;
@@ -115,6 +121,7 @@ namespace VRLauncher
 
             if (nav < 0) Previous?.Invoke();
             else if (nav > 0) Next?.Invoke();
+            if (letterStep != 0) JumpLetter?.Invoke(letterStep);
             if (favorite) ToggleFavorite?.Invoke();
             if (view || viewStep > 0) CycleView?.Invoke();
             else if (viewStep < 0) PreviousView?.Invoke();

@@ -46,6 +46,24 @@ namespace VRLauncher
             if (items.Count > 0) SelectedIndex = (SelectedIndex - 1 + items.Count) % items.Count;
         }
 
+        /// <summary>Jumps alphabetically within this view without changing its sort order.</summary>
+        public void JumpLetter(int direction)
+        {
+            if (Selected == null || direction == 0) return;
+            var groups = items.GroupBy(e => Letter(e.Title)).OrderBy(g => g.Key).ToList();
+            if (groups.Count < 2) return;
+            int current = groups.FindIndex(g => g.Key == Letter(Selected.Title));
+            int target = (current + Math.Sign(direction) + groups.Count) % groups.Count;
+            TableEntry first = groups[target].OrderBy(e => e.Title, StringComparer.OrdinalIgnoreCase).First();
+            SelectedIndex = items.IndexOf(first);
+        }
+
+        private static char Letter(string title)
+        {
+            string trimmed = (title ?? string.Empty).TrimStart();
+            return trimmed.Length > 0 && char.IsLetter(trimmed[0]) ? char.ToUpperInvariant(trimmed[0]) : '#';
+        }
+
         /// <summary>The entry <paramref name="offset"/> places from the selection, wrapping; null when empty.</summary>
         public TableEntry EntryAt(int offset)
         {

@@ -239,6 +239,7 @@ and position.
 | B | Toggle favorite |
 | X | Cycle view: All, Favorites, Recent |
 | Left thumbstick down / up | Next / previous view (release to center between changes) |
+| Right thumbstick down / up | Next / previous starting letter (release to center between jumps) |
 | Hold Y 2 s | Quit (with countdown on the info plate) |
 | Keyboard Left Shift / Left Arrow | Previous table |
 | Keyboard Right Shift / Right Arrow | Next table |
@@ -263,6 +264,12 @@ reading "No favorites yet" or "Nothing played yet", and cycling still works.
 Left thumbstick down also advances the view; up goes back. Each push changes
 the view once, with no repeat while held. Return the stick to center before
 another change. Left/right still browses tables, and X remains available.
+
+Right thumbstick down/up jumps to the next/previous available starting letter
+within the current view, wrapping at either end. Numbers and symbols share a
+`#` group. Each jump selects the alphabetically first title in that group;
+Recent keeps its existing newest-first order. Hold does not repeat: return the
+stick to center between jumps. Right-stick left/right still browses tables.
 
 ### State file
 

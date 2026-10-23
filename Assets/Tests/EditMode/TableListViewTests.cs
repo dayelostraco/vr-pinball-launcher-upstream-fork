@@ -33,6 +33,53 @@ namespace VRLauncher.Tests
             Assert.AreEqual(0, view.SelectedIndex);
         }
 
+        private static List<TableEntry> LetterEntries() => new List<TableEntry>
+        {
+            new TableEntry("1.vpx", "1.vpx", "1", "2001", null, 0, null),
+            new TableEntry("a.vpx", "a.vpx", "a", "Attack from Mars", null, 0, null),
+            new TableEntry("b.vpx", "b.vpx", "b", "Batman", null, 0, null),
+            new TableEntry("b2.vpx", "b2.vpx", "b2", "Black Knight", null, 0, null),
+            new TableEntry("m.vpx", "m.vpx", "m", "Medieval Madness", null, 0, null)
+        };
+
+        [Test]
+        public void LetterJump_SkipsSameLetterAndMissingLettersAndWraps()
+        {
+            var view = new TableListView(LetterEntries(), state);
+            view.Select("b2.vpx");
+            view.JumpLetter(1);
+            Assert.AreEqual("m.vpx", view.Selected.RelativePath);
+            view.JumpLetter(1);
+            Assert.AreEqual("1.vpx", view.Selected.RelativePath);
+            view.JumpLetter(-1);
+            Assert.AreEqual("m.vpx", view.Selected.RelativePath);
+            view.JumpLetter(-1);
+            Assert.AreEqual("b.vpx", view.Selected.RelativePath);
+        }
+
+        [Test]
+        public void LetterJump_UsesCurrentViewAndPreservesRecentOrder()
+        {
+            var all = LetterEntries();
+            state.RecordPlay("b.vpx", Noon);
+            state.RecordPlay("a.vpx", Noon.AddMinutes(1));
+            state.RecordPlay("b2.vpx", Noon.AddMinutes(2));
+            var view = new TableListView(all, state);
+            view.CycleView(-1); // Recent: Black Knight, Attack from Mars, Batman
+            var original = new List<TableEntry>(view.Items);
+            view.Select("a.vpx");
+            view.JumpLetter(1);
+            Assert.AreEqual("b.vpx", view.Selected.RelativePath);
+            CollectionAssert.AreEqual(original, view.Items);
+            view.CycleView(-1); // Empty Favorites
+            view.JumpLetter(1);
+            Assert.IsNull(view.Selected);
+            state.ToggleFavorite("b2.vpx");
+            view.Refresh();
+            view.JumpLetter(-1);
+            Assert.AreEqual("b2.vpx", view.Selected.RelativePath);
+        }
+
         [Test]
         public void NextAndPrevious_WrapAround()
         {
