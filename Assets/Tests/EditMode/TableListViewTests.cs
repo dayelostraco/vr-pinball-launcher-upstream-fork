@@ -77,6 +77,18 @@ namespace VRLauncher.Tests
         }
 
         [Test]
+        public void CycleView_BackwardWrapsAndForwardReturns()
+        {
+            var view = new TableListView(TestEntries.Make(2), state);
+            view.CycleView(-1);
+            Assert.AreEqual(ViewKind.Recent, view.Kind);
+            view.CycleView(-1);
+            Assert.AreEqual(ViewKind.Favorites, view.Kind);
+            view.CycleView();
+            Assert.AreEqual(ViewKind.Recent, view.Kind);
+        }
+
+        [Test]
         public void CycleView_KeepsTheSelectedTableWhenItIsInTheNextView()
         {
             List<TableEntry> all = TestEntries.Make(5);

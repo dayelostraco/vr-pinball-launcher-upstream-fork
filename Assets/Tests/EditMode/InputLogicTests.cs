@@ -5,6 +5,28 @@ namespace VRLauncher.Tests
     public class InputLogicTests
     {
         [Test]
+        public void ViewStick_RequiresCenterBeforeAnotherStep()
+        {
+            var latch = new ViewStickLatch();
+            Assert.AreEqual(1, latch.Update(0f, -0.9f));
+            Assert.AreEqual(0, latch.Update(0f, -0.9f));
+            Assert.AreEqual(0, latch.Update(0f, 0.9f));
+            Assert.AreEqual(0, latch.Update(0f, 0f));
+            Assert.AreEqual(-1, latch.Update(0f, 0.9f));
+        }
+
+        [Test]
+        public void ViewStick_IgnoresNoiseAndHorizontalGestures()
+        {
+            var latch = new ViewStickLatch();
+            Assert.AreEqual(0, latch.Update(0.1f, 0.5f));
+            Assert.AreEqual(0, latch.Update(0.9f, 0.7f));
+            Assert.AreEqual(-1, latch.Update(0.2f, 0.8f));
+            Assert.AreEqual(0, latch.Update(0.8f, 0f));
+            Assert.AreEqual(0, latch.Update(0f, -0.8f));
+        }
+
+        [Test]
         public void TriggerLatch_FiresOncePerSqueezeWithHysteresis()
         {
             var latch = new TriggerLatch();

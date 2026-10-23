@@ -238,6 +238,7 @@ and position.
 | A | Launch |
 | B | Toggle favorite |
 | X | Cycle view: All, Favorites, Recent |
+| Left thumbstick down / up | Next / previous view (release to center between changes) |
 | Hold Y 2 s | Quit (with countdown on the info plate) |
 | Keyboard Left Shift / Left Arrow | Previous table |
 | Keyboard Right Shift / Right Arrow | Next table |
@@ -258,6 +259,10 @@ only tables you've actually played, newest first. X (or keyboard V) cycles
 through the All, Favorites and Recent views; when the current view is empty
 (for example no favorites yet), the room shows one placeholder cabinet
 reading "No favorites yet" or "Nothing played yet", and cycling still works.
+
+Left thumbstick down also advances the view; up goes back. Each push changes
+the view once, with no repeat while held. Return the stick to center before
+another change. Left/right still browses tables, and X remains available.
 
 ### State file
 

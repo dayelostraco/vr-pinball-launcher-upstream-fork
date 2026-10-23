@@ -134,7 +134,17 @@ namespace VRLauncher
 
         public void CycleView()
         {
-            view.CycleView();
+            ChangeView(1);
+        }
+
+        public void PreviousView()
+        {
+            ChangeView(-1);
+        }
+
+        private void ChangeView(int direction)
+        {
+            view.CycleView(direction);
             scroll = 0f;
             scrollVelocity = 0f;
             Assign();

@@ -36,6 +36,7 @@ namespace VRLauncher
         public event Action Launch;
         public event Action ToggleFavorite;
         public event Action CycleView;
+        public event Action PreviousView;
         public event Action Quit;
 
         public bool InputEnabled { get; set; } = true;
@@ -49,6 +50,7 @@ namespace VRLauncher
         private readonly ButtonEdge bButton = new ButtonEdge();
         private readonly ButtonEdge xButton = new ButtonEdge();
         private readonly StickRepeat stick = new StickRepeat();
+        private readonly ViewStickLatch viewStick = new ViewStickLatch();
         private readonly HoldTimer quitHold = new HoldTimer(QuitHoldSeconds);
         private XRInputDevice left;
         private XRInputDevice right;
@@ -83,6 +85,7 @@ namespace VRLauncher
             bool quit = KeyEdge(VK_ESCAPE);
 
             float stickX = 0f;
+            Vector2 leftStick = Vector2.zero;
             bool yHeld = false;
 
             if (left.isValid)
@@ -90,8 +93,12 @@ namespace VRLauncher
                 if (left.TryGetFeatureValue(XRCommonUsages.trigger, out float lt) && leftTrigger.Update(lt)) nav -= 1;
                 if (left.TryGetFeatureValue(XRCommonUsages.primaryButton, out bool x) && xButton.Update(x)) view = true;
                 yHeld = left.TryGetFeatureValue(XRCommonUsages.secondaryButton, out bool y) && y;
-                if (left.TryGetFeatureValue(XRCommonUsages.primary2DAxis, out Vector2 ls)) stickX = ls.x;
+                if (left.TryGetFeatureValue(XRCommonUsages.primary2DAxis, out Vector2 ls)) leftStick = ls;
             }
+
+            int viewStep = viewStick.Update(leftStick.x, leftStick.y);
+            // Vertical gestures must not also browse tables on diagonal pushes.
+            if (Mathf.Abs(leftStick.x) >= Mathf.Abs(leftStick.y)) stickX = leftStick.x;
 
             if (right.isValid)
             {
@@ -109,7 +116,8 @@ namespace VRLauncher
             if (nav < 0) Previous?.Invoke();
             else if (nav > 0) Next?.Invoke();
             if (favorite) ToggleFavorite?.Invoke();
-            if (view) CycleView?.Invoke();
+            if (view || viewStep > 0) CycleView?.Invoke();
+            else if (viewStep < 0) PreviousView?.Invoke();
             if (launch) Launch?.Invoke();
             if (quit) Quit?.Invoke();
         }

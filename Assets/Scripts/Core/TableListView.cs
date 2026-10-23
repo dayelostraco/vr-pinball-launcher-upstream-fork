@@ -54,10 +54,10 @@ namespace VRLauncher
             return items[((SelectedIndex + offset) % n + n) % n];
         }
 
-        public void CycleView()
+        public void CycleView(int direction = 1)
         {
             TableEntry keep = Selected;
-            Kind = (ViewKind)(((int)Kind + 1) % 3);
+            Kind = (ViewKind)((((int)Kind + direction) % 3 + 3) % 3);
             Rebuild(keep, 0);
         }
 

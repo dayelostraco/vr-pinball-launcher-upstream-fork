@@ -27,6 +27,20 @@ namespace VRLauncher
         }
     }
 
+    /// <summary>One vertical view step per centered-stick excursion, with dominant-axis gating.</summary>
+    public sealed class ViewStickLatch
+    {
+        private bool held;
+
+        public int Update(float x, float y)
+        {
+            if (Math.Abs(x) < 0.3f && Math.Abs(y) < 0.3f) held = false;
+            if (held || Math.Abs(y) <= 0.6f || Math.Abs(y) <= Math.Abs(x)) return 0;
+            held = true;
+            return y < 0f ? 1 : -1;
+        }
+    }
+
     /// <summary>Fires on the frame a button goes down.</summary>
     public sealed class ButtonEdge
     {
