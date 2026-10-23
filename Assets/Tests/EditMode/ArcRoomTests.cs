@@ -102,7 +102,21 @@ namespace VRLauncher.Tests
             room.Refresh();
             StringAssert.Contains("Favorite", room.InfoDetail);
             StringAssert.Contains("Last played 3 days ago", room.InfoDetail);
+            StringAssert.Contains("Played 1 time", room.InfoDetail);
             StringAssert.StartsWith("Bally · 1990", room.InfoDetail);
+        }
+
+        [Test]
+        public void PlayCount_RefreshesAndFollowsTheSelectedTable()
+        {
+            var (_, all) = Build(3);
+            StringAssert.Contains("Played 0 times", room.InfoDetail);
+            state.RecordPlay(all[0].RelativePath, DateTime.UtcNow);
+            state.RecordPlay(all[0].RelativePath, DateTime.UtcNow);
+            room.Refresh();
+            StringAssert.Contains("Played 2 times", room.InfoDetail);
+            room.Next();
+            StringAssert.Contains("Played 0 times", room.InfoDetail);
         }
 
         [Test]

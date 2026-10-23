@@ -227,7 +227,7 @@ a photo of a real Williams/Bally door when `Media\Cabinet\coindoor.jpg` exists
 next to the launcher; otherwise it uses a built-in door with two red lit
 slots. Browsing rotates the arc to the next or previous cabinet; the info
 plate under the centered cabinet shows the title, manufacturer and year, a
-star if it's a favorite, when it was last played, and the current view name
+star if it's a favorite, how many times it has been played, when it was last played, and the current view name
 and position.
 
 ### Controls
@@ -265,6 +265,11 @@ the view once, with no repeat while held. Return the stick to center before
 another change. Left/right still browses tables, and X remains available.
 
 ### State file
+
+The table label shows "Played 0 times", "Played 1 time", or "Played N times"
+using existing play history. Counts increase when you return from a table
+launched through this launcher; they count sessions, not individual games or
+restarts within VPX. Direct VPX launches are not counted.
 
 Favorites and play history are stored in `state.json` at
 `%USERPROFILE%\AppData\LocalLow\DefaultCompany\vr-launch\state.json`, keyed by

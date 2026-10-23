@@ -252,6 +252,8 @@ namespace VRLauncher
             var parts = new List<string>();
             if (entry.Subtitle.Length > 0) parts.Add(entry.Subtitle);
             if (state.IsFavorite(entry.RelativePath)) parts.Add("<color=#FFC940>Favorite</color>");
+            int playCount = state.PlayCount(entry.RelativePath);
+            parts.Add(playCount == 1 ? "Played 1 time" : $"Played {playCount} times");
             DateTime? last = state.LastPlayed(entry.RelativePath);
             if (last.HasValue) parts.Add("Last played " + RelativeTime.Format(last.Value, DateTime.UtcNow));
             return string.Join(" · ", parts);
