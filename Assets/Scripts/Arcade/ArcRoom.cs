@@ -103,6 +103,10 @@ namespace VRLauncher
             infoStatus = PlateLine(plate, "Status", -0.06f, new Vector2(0.9f, 0.045f));
             infoStatus.color = new Color(0.7f, 0.7f, 0.75f);
 
+            ControlHint(plate, "BrowseHint", -0.115f, "Left stick: sideways = tables, up/down = views");
+            ControlHint(plate, "LetterHint", -0.155f, "Right stick up/down: jump letters");
+            ControlHint(plate, "ButtonHint", -0.195f, "A: play · B: favorite · X: views · Hold Y: quit");
+
             videoTexture = new RenderTexture(1920, 1080, 0) { name = "PlayfieldVideo" };
             video = gameObject.AddComponent<VideoPlayer>();
             video.playOnAwake = false;
@@ -337,6 +341,13 @@ namespace VRLauncher
             var material = new Material(Shader.Find("Standard")) { color = color };
             material.SetFloat("_Glossiness", gloss);
             go.GetComponent<MeshRenderer>().sharedMaterial = material;
+        }
+
+        private static void ControlHint(Transform plate, string name, float y, string label)
+        {
+            TextMeshPro hint = PlateLine(plate, name, y, new Vector2(0.9f, 0.035f));
+            hint.text = label;
+            hint.color = new Color(0.65f, 0.75f, 0.8f);
         }
 
         private static TextMeshPro PlateLine(Transform plate, string name, float y, Vector2 size)
