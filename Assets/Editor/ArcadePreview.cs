@@ -129,6 +129,10 @@ namespace VRLauncher.EditorTools
 
         private static void Render(Camera camera, string path)
         {
+            foreach (var text in UnityEngine.Object.FindObjectsByType<TMPro.TMP_Text>())
+            {
+                text.ForceMeshUpdate();
+            }
             const int width = 1600, height = 900;
             var target = new RenderTexture(width, height, 24);
             camera.targetTexture = target;

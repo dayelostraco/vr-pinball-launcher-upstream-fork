@@ -19,7 +19,7 @@ namespace VRLauncher
         public const float MaxScroll = 2f;
         private const float ScrollSmoothTime = 0.08f;   // settles in about 0.25 s
         private const float VideoDelay = 0.3f;
-        private static readonly Vector3 InfoPlateOffset = new Vector3(0f, 0.45f, -0.40f);
+        private static readonly Vector3 InfoPlateOffset = new Vector3(0f, 0.85f, -0.65f);
 
         private readonly Dictionary<int, CabinetView> cabinets = new Dictionary<int, CabinetView>();
         private TableListView view;
@@ -81,9 +81,9 @@ namespace VRLauncher
             Vector3 target = ArcLayout.SlotPosition(0f) + CabinetView.PlayfieldCenter;
             var key = new GameObject("KeyLight").AddComponent<Light>();
             key.type = LightType.Spot;
-            key.spotAngle = 45f;
+            key.spotAngle = 36f;
             key.range = 6f;
-            key.intensity = 3f;
+            key.intensity = 4f;
             key.color = new Color(1f, 0.95f, 0.88f);
             key.transform.SetParent(transform, false);
             key.transform.localPosition = new Vector3(0f, 3.2f, 0.9f);
@@ -91,7 +91,7 @@ namespace VRLauncher
 
             var fill = new GameObject("FillLight").AddComponent<Light>();
             fill.type = LightType.Directional;
-            fill.intensity = 0.3f;
+            fill.intensity = 0.22f;
             fill.color = new Color(0.75f, 0.8f, 1f);
             fill.transform.SetParent(transform, false);
             fill.transform.localRotation = Quaternion.Euler(50f, -30f, 0f);
@@ -101,20 +101,29 @@ namespace VRLauncher
                 cabinets[k] = CabinetView.Create(transform, cache, coinDoorImage);
             }
 
+            BuildSelectionMarker();
+
             var plate = new GameObject("InfoPlate").transform;
             plate.SetParent(transform, false);
             plate.localPosition = ArcLayout.SlotPosition(0f) + InfoPlateOffset;
-            plate.localRotation = Quaternion.Euler(35f, 0f, 0f);
-            infoTitle = PlateLine(plate, "Title", 0.07f, new Vector2(0.9f, 0.08f));
-            infoDetail = PlateLine(plate, "Detail", 0f, new Vector2(0.9f, 0.05f));
-            infoStatus = PlateLine(plate, "Status", -0.06f, new Vector2(0.9f, 0.045f));
-            infoStatus.color = new Color(0.7f, 0.7f, 0.75f);
-
-            ControlHint(plate, "BrowseHint", -0.115f, "Left stick: sideways = tables, up/down = views");
-            ControlHint(plate, "LetterHint", -0.155f, "Right stick up/down: jump letters");
-            ControlHint(plate, "ButtonHint", -0.195f, "A: play · B: favorite · X: views · Hold Y: quit");
-            ControlHint(plate, "SurpriseHint", -0.235f, "Click right stick: Surprise Me (then A to play)");
-            ControlHint(plate, "DetailsHint", -0.275f, "Click left stick: table details");
+            plate.localRotation = Quaternion.Euler(25f, 0f, 0f);
+            PanelQuad(plate, "PlateBackground", Vector3.forward * 0.012f, new Vector2(1.2f, 0.55f), new Color(0.025f, 0.035f, 0.05f));
+            PanelQuad(plate, "AccentRule", new Vector3(0f, 0.263f, 0.005f), new Vector2(1.2f, 0.006f), new Color(0.25f, 0.7f, 0.85f));
+            infoTitle = PlateLine(plate, "Title", 0.17f, new Vector2(1.1f, 0.13f));
+            infoTitle.fontStyle = FontStyles.Bold;
+            infoTitle.fontSizeMax = 4.5f;
+            infoTitle.textWrappingMode = TextWrappingModes.Normal;
+            infoDetail = PlateLine(plate, "Detail", 0.065f, new Vector2(1.08f, 0.065f));
+            infoDetail.fontSizeMax = 1.8f;
+            infoDetail.textWrappingMode = TextWrappingModes.Normal;
+            infoDetail.color = new Color(0.77f, 0.83f, 0.88f);
+            infoStatus = PlateLine(plate, "Status", -0.005f, new Vector2(1.08f, 0.045f));
+            infoStatus.color = new Color(0.45f, 0.8f, 0.9f);
+            PanelQuad(plate, "HintDivider", new Vector3(0f, -0.045f, 0.005f), new Vector2(1.08f, 0.002f), new Color(0.15f, 0.25f, 0.3f));
+            HintGroup(plate, "NavigationHints", -0.275f,
+                "<b>NAVIGATE</b>\nLeft stick sideways: tables\nLeft stick up/down: views\nRight stick up/down: letters");
+            HintGroup(plate, "ActionHints", 0.275f,
+                "<b>PLAY & EXPLORE</b>\nA: play · B: favorite · X: views\nClick L stick: details · R: Surprise Me\nHold Y: quit · A plays your pick");
             BuildDetailsPanel();
 
             videoTexture = new RenderTexture(1920, 1080, 0) { name = "PlayfieldVideo" };
@@ -410,11 +419,42 @@ namespace VRLauncher
             go.GetComponent<MeshRenderer>().sharedMaterial = material;
         }
 
-        private static void ControlHint(Transform plate, string name, float y, string label)
+        private void BuildSelectionMarker()
         {
-            TextMeshPro hint = PlateLine(plate, name, y, new Vector2(0.9f, 0.035f));
+            var marker = new GameObject("SelectionMarker").transform;
+            marker.SetParent(transform, false);
+            marker.localPosition = ArcLayout.SlotPosition(0f) + new Vector3(0f, 0.012f, 0.5f);
+            marker.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            Color cyan = new Color(0.18f, 0.55f, 0.65f);
+            PanelQuad(marker, "LeftRail", new Vector3(-0.43f, 0f, 0f), new Vector2(0.012f, 1.25f), cyan);
+            PanelQuad(marker, "RightRail", new Vector3(0.43f, 0f, 0f), new Vector2(0.012f, 1.25f), cyan);
+            PanelQuad(marker, "FrontRail", new Vector3(0f, -0.625f, 0f), new Vector2(0.87f, 0.012f), cyan);
+        }
+
+        private static void PanelQuad(Transform parent, string name, Vector3 position, Vector2 size, Color color)
+        {
+            var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            quad.name = name;
+            Collider collider = quad.GetComponent<Collider>();
+            if (Application.isPlaying) Destroy(collider); else DestroyImmediate(collider);
+            quad.transform.SetParent(parent, false);
+            quad.transform.localPosition = position;
+            quad.transform.localScale = new Vector3(size.x, size.y, 1f);
+            var material = new Material(Shader.Find("Standard")) { color = color };
+            material.EnableKeyword("_EMISSION");
+            material.SetColor("_EmissionColor", color);
+            material.SetFloat("_Glossiness", 0f);
+            quad.GetComponent<MeshRenderer>().sharedMaterial = material;
+        }
+
+        private static void HintGroup(Transform plate, string name, float x, string label)
+        {
+            TextMeshPro hint = PlateLine(plate, name, -0.155f, new Vector2(0.52f, 0.16f));
+            hint.transform.localPosition += Vector3.right * x;
             hint.text = label;
-            hint.color = new Color(0.65f, 0.75f, 0.8f);
+            hint.alignment = TextAlignmentOptions.TopLeft;
+            hint.fontSizeMax = 1.4f;
+            hint.color = new Color(0.68f, 0.76f, 0.82f);
         }
 
         private static TextMeshPro PlateLine(Transform plate, string name, float y, Vector2 size)

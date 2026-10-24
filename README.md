@@ -230,9 +230,10 @@ plate under the centered cabinet shows the title, manufacturer and year, a
 star if it's a favorite, how many times it has been played, when it was last played, and the current view name
 and position.
 
-Five compact control-hint lines beneath the info plate describe left-stick
-table/view navigation, right-stick letter jumps, the A/B/X/Y actions, Surprise Me,
-and table details.
+The selected cabinet has a warm spotlight and a subtle cyan floor marker.
+A raised info panel separates the larger title, metadata, and view indicator.
+Two compact hint groups, Navigate and Play & Explore, describe browsing,
+letter jumps, view switching, stick-click actions, play, favorites, and quit.
 They remain visible in all views, including empty Favorites and Recent lists.
 
 ### Controls
