@@ -30,6 +30,7 @@ namespace VRLauncher
         private const int VK_V = 0x56;
         private const int VK_R = 0x52;
         private const int VK_I = 0x49;
+        private const int VK_F2 = 0x71;
 
         public const float QuitHoldSeconds = 2f;
 
@@ -42,6 +43,7 @@ namespace VRLauncher
         public event Action<int> JumpLetter;
         public event Action SurpriseMe;
         public event Action ToggleDetails;
+        public event Action OpenSetup;
         public event Action Quit;
 
         public bool InputEnabled { get; set; } = true;
@@ -93,6 +95,7 @@ namespace VRLauncher
             bool quit = KeyEdge(VK_ESCAPE);
             bool surprise = KeyEdge(VK_R);
             bool details = KeyEdge(VK_I);
+            bool setup = KeyEdge(VK_F2);
 
             float stickX = 0f;
             Vector2 leftStick = Vector2.zero;
@@ -134,6 +137,7 @@ namespace VRLauncher
             if (quitHold.Update(yHeld, dt)) quit = true;
 
             if (!raise) return;
+            if (setup) OpenSetup?.Invoke();
 
             if (nav < 0) Previous?.Invoke();
             else if (nav > 0) Next?.Invoke();

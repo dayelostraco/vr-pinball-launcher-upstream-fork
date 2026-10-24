@@ -38,12 +38,12 @@ A Steam VR launcher for Visual Pinball tables that puts you in a VR arcade room,
 ### Option 2: Use the Installer (recommended)
 
 1. Download **`VRPinballLauncher-Setup.exe`** from the releases page.
-2. Run it. The wizard lets you choose the install location (per-user, no admin, or
-   all-users in Program Files), creates Start Menu / Desktop shortcuts, and offers
-   optional checkboxes to **set up VPinballX for VR** (downloads the VR build if you
-   don't have it), **set up VPinMAME** (the ROM emulator most tables need — this
-   registers a COM DLL, so it triggers one admin prompt on a per-user install), and
-   the **controller bridge**.
+2. Run it. Choose the install location (per-user or all-users), then use the
+   default **Review an existing VPX installation** task to connect and check your
+   setup. Start Menu shortcuts include the launcher and its desktop Setup window.
+   Legacy GL VPX download, VPinMAME COM registration, and controller-bridge
+   installation are separate, unchecked options. VPinMAME registration requires
+   an admin prompt.
 3. Launch from the Desktop / Start Menu shortcut. Uninstall any time from
    **Settings → Apps** or the Start Menu.
 
@@ -52,9 +52,10 @@ When the VPinballX VR step runs, it also drops **"VR Pinball Tables"** and
 folder and VPinMAME's ROM folder), so you can drag new `.vpx` tables and ROM `.zip`
 files straight in.
 
-The optional setup steps just run the bundled `install.ps1`; you can re-run it any
-time from the install folder to reconfigure, and you can still edit
-`launcher-config.json` by hand. See [In-Game Controls](#in-game-controls-while-a-table-is-running).
+The desktop setup workflow is documented in [Existing-installation setup](docs/setup.md).
+Optional legacy installation steps run the bundled `install.ps1`; these remain
+available separately. You can still edit `launcher-config.json` by hand.
+See [In-Game Controls](#in-game-controls-while-a-table-is-running).
 
 #### Building the installer (maintainers)
 
@@ -70,6 +71,11 @@ This compiles `installer/vr-pinball-launcher.iss` into
 `ControllerBridge` folder.
 
 ## Configuration
+
+Use **VR Pinball Launcher Setup** in the Start menu, or **F2 on the PC keyboard**
+from the launcher, to connect an existing installation, review a health report,
+test a selected table, and apply backed-up location/helper/VR changes. Nothing
+changes just by opening setup. See [Existing-installation setup](docs/setup.md).
 
 Edit `launcher-config.json` in the same folder as the executable:
 
@@ -258,6 +264,7 @@ opened when Favorites or Recent is empty.
 | Keyboard Enter / Space | Launch |
 | Keyboard F | Toggle favorite |
 | Keyboard V | Cycle view |
+| Keyboard F2 | Open the desktop setup window |
 | Keyboard Esc | Quit |
 
 `LauncherInput.cs` in `Assets/Scripts/Arcade/` is the ground truth for the

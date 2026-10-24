@@ -206,8 +206,8 @@ namespace VRLauncher
                 "<b>NAVIGATE</b>\nLeft sideways: tables\nLeft up/down: views\nRight up/down: letters");
             HintGroup(panel, "ActionHints", 0.225f,
                 "<b>PLAY & EXPLORE</b>\nA: play · B: favorite · X: views\nRight click: Surprise Me\nHold Y: quit");
-            var footer = PlateLine(panel, "DetailsFooter", -0.47f, new Vector2(0.9f, 0.06f));
-            footer.text = "Click left stick to close · A to play";
+            var footer = PlateLine(panel, "DetailsFooter", -0.47f, new Vector2(0.9f, 0.09f));
+            footer.text = "Click left stick to close · A to play\nF2 on PC: setup";
             footer.color = new Color(0.65f, 0.75f, 0.8f);
             detailsPanel.SetActive(false);
         }

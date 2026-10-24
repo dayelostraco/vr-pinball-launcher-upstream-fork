@@ -51,6 +51,8 @@ $ErrorActionPreference = "Stop"
 $rootDir    = Split-Path -Parent $MyInvocation.MyCommand.Definition   # = folder next to vr-launch.exe
 $bridgeDir  = Join-Path $rootDir "ControllerBridge"
 $scriptPath = Join-Path $bridgeDir "vpx_vr_controls.ahk"
+$setupCore = Join-Path $rootDir 'tools\SetupCore.psm1'
+if (Test-Path -LiteralPath $setupCore) { Import-Module $setupCore -Force -DisableNameChecking }
 
 Write-Host "VR Pinball Launcher -- setup"
 Write-Host "Launcher folder: $rootDir"
@@ -79,11 +81,12 @@ function Get-LauncherConfigPath {
 function Set-LauncherConfig {
     param([hashtable]$Values)
     $configPath = Get-LauncherConfigPath
-    $json = Get-Content -Raw -Path $configPath | ConvertFrom-Json
+    if (Test-Path -LiteralPath $configPath) { Copy-Item -LiteralPath $configPath -Destination ($configPath + '.bak-setup-' + (Get-Date -Format 'yyyyMMdd-HHmmss-fff')) }
+    $json = [IO.File]::ReadAllText($configPath) | ConvertFrom-Json
     foreach ($key in $Values.Keys) {
         $json | Add-Member -NotePropertyName $key -NotePropertyValue $Values[$key] -Force
     }
-    [System.IO.File]::WriteAllText($configPath, ($json | ConvertTo-Json -Depth 12))
+    [System.IO.File]::WriteAllText($configPath, ($json | ConvertTo-Json -Depth 30))
     Write-Host "Updated $configPath"
 }
 
@@ -158,23 +161,27 @@ function Find-Vpx {
     param([string]$PreferDir)
 
     $candidates = @()
-    if ($PreferDir) { $candidates += (Join-Path $PreferDir "VPinballX_GL64.exe") }
+    if ($PreferDir) {
+        foreach ($name in @('VPinballX_BGFX64.exe','VPinballX_GL64.exe','VPinballX64.exe')) { $candidates += Join-Path $PreferDir $name }
+    }
 
     # Whatever the current config already points at.
     $configPath = Join-Path $rootDir "launcher-config.json"
     if (Test-Path $configPath) {
         try {
-            $existing = (Get-Content -Raw -Path $configPath | ConvertFrom-Json).vpinballExecutable
-            if ($existing) { $candidates += $existing }
+            $existing = ([IO.File]::ReadAllText($configPath) | ConvertFrom-Json).vpinballExecutable
+            if ($existing -and [IO.Path]::GetFileName($existing) -match '^VPinballX(?:_|64|\.exe)') { $candidates += $existing }
+            elseif ($existing -and (Get-Command Get-SetupVpxTarget -ErrorAction SilentlyContinue)) {
+                $cfg = Read-SetupConfig $rootDir
+                $resolved = Get-SetupVpxTarget $existing (Get-SetupValue $cfg 'realVpinballExecutable')
+                if ($resolved.Target) { $candidates += $resolved.Target }
+            }
         } catch { }
     }
 
-    $candidates += @(
-        "C:\Visual Pinball\VPinballX_GL64.exe",
-        "C:\Games\Visual Pinball\VPinballX_GL64.exe",
-        "C:\Program Files\Visual Pinball\VPinballX_GL64.exe",
-        "C:\Program Files (x86)\Visual Pinball\VPinballX_GL64.exe"
-    )
+    foreach ($directory in @('C:\Visual Pinball','D:\Visual Pinball','C:\Games\Visual Pinball','C:\Program Files\Visual Pinball','C:\Program Files (x86)\Visual Pinball')) {
+        foreach ($name in @('VPinballX_BGFX64.exe','VPinballX_GL64.exe','VPinballX64.exe')) { $candidates += Join-Path $directory $name }
+    }
 
     return $candidates | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
 }
@@ -296,16 +303,32 @@ function Install-VpxVR {
     # VPinballX.ini sits next to the executable (portable mode). Prefer the
     # portable one if it already exists, otherwise use the AppData copy.
     $portableIni = Join-Path (Split-Path -Parent $vpxExe) "VPinballX.ini"
-    $appDataIni  = Join-Path $env:APPDATA "VPinballX\VPinballX.ini"
-    $iniPath = if (Test-Path $portableIni) { $portableIni } else { $appDataIni }
+    $appDataIni  = Join-Path $env:APPDATA "VPinballX\10.8\VPinballX.ini"
+    $legacyIni = Join-Path $env:APPDATA 'VPinballX\VPinballX.ini'
+    $iniPath = if (Test-Path $portableIni) { $portableIni } elseif (Test-Path $appDataIni) { $appDataIni } elseif (Test-Path $legacyIni) { $legacyIni } else { $appDataIni }
+    if (Get-Command Get-SetupIniLocation -ErrorAction SilentlyContinue) {
+        $located = Get-SetupIniLocation $vpxExe
+        if ($located.Verified) { $iniPath = $located.Path }
+    }
 
+    if (Test-Path -LiteralPath $iniPath) { Copy-Item -LiteralPath $iniPath -Destination ($iniPath + '.bak-setup-' + (Get-Date -Format 'yyyyMMdd-HHmmss-fff')) }
     Set-IniValue -Path $iniPath -Section "PlayerVR" -Key "AskToTurnOn" -Value "0"
     Write-Host "Enabled VR ([PlayerVR] AskToTurnOn=0) in: $iniPath"
 
     # --- Wire the launcher config ---
-    $values = @{ vpinballExecutable = $vpxExe }
+    $values = @{ vpinballExecutable = $vpxExe; realVpinballExecutable = $vpxExe }
+    if (Get-Command Get-SetupVpxTarget -ErrorAction SilentlyContinue) {
+        $currentConfig = Read-SetupConfig $rootDir
+        $currentRunner = Get-SetupValue $currentConfig 'vpinballExecutable'
+        $currentTarget = Get-SetupVpxTarget $currentRunner (Get-SetupValue $currentConfig 'realVpinballExecutable')
+        if ($currentTarget.Kind -eq 'Launch helper' -and $currentTarget.Target -ieq $vpxExe -and (Test-Path -LiteralPath $currentRunner)) { $values.vpinballExecutable = $currentRunner }
+    }
 
     $tables = $TablesDir
+    if (-not $tables) {
+        $existingTables = ([IO.File]::ReadAllText((Get-LauncherConfigPath)) | ConvertFrom-Json).tablesDirectory
+        if ($existingTables -and (Test-Path -LiteralPath $existingTables -PathType Container)) { $tables = $existingTables }
+    }
     if (-not $tables) {
         $guess = Join-Path (Split-Path -Parent $vpxExe) "Tables"
         if (Test-Path $guess) { $tables = $guess }
@@ -316,7 +339,7 @@ function Install-VpxVR {
 
     # --- Desktop shortcuts to the Tables and ROMs folders (easy drag-and-drop) ---
     # Point at the tables folder the launcher actually scans, and VPinMAME's ROM path.
-    $finalTables = (Get-Content -Raw -Path (Get-LauncherConfigPath) | ConvertFrom-Json).tablesDirectory
+    $finalTables = ([IO.File]::ReadAllText((Get-LauncherConfigPath)) | ConvertFrom-Json).tablesDirectory
     $romPath = Get-RomPath -VpxExe $vpxExe
     New-DesktopFolderShortcut -Name "VR Pinball Tables" -TargetDir $finalTables
     New-DesktopFolderShortcut -Name "VR Pinball ROMs"   -TargetDir $romPath
@@ -327,7 +350,7 @@ function Install-VpxVR {
     if ($finalTables) { Write-Host "  Tables:     $finalTables" }
     if ($romPath)     { Write-Host "  ROMs:       $romPath" }
     Write-Host "  Desktop shortcuts added for the Tables and ROMs folders -- drag your tables/ROMs in."
-    Write-Host "  VR needs a SteamVR-compatible runtime (Quest Link / Air Link + SteamVR) running before launch."
+    Write-Host "  VR needs a compatible active runtime and a connected headset before launch."
     Write-Host ""
 }
 

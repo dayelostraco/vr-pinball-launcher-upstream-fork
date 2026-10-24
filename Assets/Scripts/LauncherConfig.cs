@@ -15,6 +15,9 @@ namespace VRLauncher
         [Tooltip("Path to VPinballX_GL64.exe")]
         public string vpinballExecutable = @"C:\Visual Pinball\VPinballX_GL64.exe";
 
+        [Tooltip("Actual VPX executable when vpinballExecutable points to a launch helper")]
+        public string realVpinballExecutable = "";
+
         [Tooltip("Extra VPX installs (e.g. 10.8.0) that tables can be assigned to in tableProfiles")]
         public VpxProfile[] vpxProfiles = new VpxProfile[0];
 
@@ -28,7 +31,7 @@ namespace VRLauncher
         public bool searchSubdirectories = true;
 
         [Tooltip("Directory containing wheel images (supports both relative and absolute paths)")]
-        public string wheelDirectory = @"C:\Visual Pinball\Media\Wheel";
+        public string wheelDirectory = @"Media\Wheel";
 
         [Tooltip("Folder of per-table media fetched by tools/fetch_media.py, one subfolder per table (supports both relative and absolute paths)")]
         public string tableMediaDirectory = @"Media\Tables";
@@ -62,6 +65,8 @@ namespace VRLauncher
 
         private static LauncherConfig _instance;
         private static readonly string ConfigFileName = "launcher-config.json";
+        public static string LoadWarning { get; private set; }
+        private static System.Diagnostics.Process setupProcess;
 
         /// <summary>
         /// Gets the singleton instance of the config
@@ -107,6 +112,7 @@ namespace VRLauncher
         /// </summary>
         public static LauncherConfig Load()
         {
+            LoadWarning = null;
             string configPath = ConfigFilePath;
 
             if (File.Exists(configPath))
@@ -115,6 +121,7 @@ namespace VRLauncher
                 {
                     string json = File.ReadAllText(configPath);
                     LauncherConfig config = JsonUtility.FromJson<LauncherConfig>(json);
+                    if (config == null) throw new InvalidDataException("Configuration was empty.");
                     Debug.Log($"Loaded configuration from: {configPath}");
                     Debug.Log($"Config values - tablesDirectory: {config.tablesDirectory}, vpinballExecutable: {config.vpinballExecutable}");
                     return config;
@@ -122,6 +129,7 @@ namespace VRLauncher
                 catch (Exception ex)
                 {
                     Debug.LogError($"Error loading config: {ex.Message}");
+                    LoadWarning = "Launcher configuration could not be read.";
                     Debug.Log("Using default configuration");
                     return CreateDefault();
                 }
@@ -161,25 +169,26 @@ namespace VRLauncher
             LauncherConfig config = new LauncherConfig();
 
             // Try to auto-detect common installation paths
-            string[] commonPaths = new string[]
+            string[] commonRoots = new string[]
             {
-                @"C:\Visual Pinball\VPinballX_GL64.exe",
-                @"C:\Games\Visual Pinball\VPinballX_GL64.exe",
-                @"C:\Program Files\Visual Pinball\VPinballX_GL64.exe",
-                @"C:\Program Files (x86)\Visual Pinball\VPinballX_GL64.exe"
+                @"C:\Visual Pinball", @"D:\Visual Pinball", @"C:\Games\Visual Pinball",
+                @"C:\Program Files\Visual Pinball", @"C:\Program Files (x86)\Visual Pinball"
             };
 
-            foreach (string path in commonPaths)
+            foreach (string root in commonRoots)
             {
-                if (File.Exists(path))
+                foreach (string name in new[] { "VPinballX_BGFX64.exe", "VPinballX_GL64.exe", "VPinballX64.exe" })
                 {
+                    string path = Path.Combine(root, name);
+                    if (!File.Exists(path)) continue;
                     config.vpinballExecutable = path;
+                    config.realVpinballExecutable = path;
                     config.tablesDirectory = Path.Combine(
                         Path.GetDirectoryName(path),
                         "Tables"
                     );
                     Debug.Log($"Auto-detected Visual Pinball at: {path}");
-                    break;
+                    return config;
                 }
             }
 
@@ -200,6 +209,13 @@ namespace VRLauncher
             if (!File.Exists(vpinballExecutable))
             {
                 errorMessage = $"VPinball executable not found: {vpinballExecutable}";
+                return false;
+            }
+
+            if (!Path.GetFileName(vpinballExecutable).StartsWith("VPinballX", StringComparison.OrdinalIgnoreCase)
+                && !string.IsNullOrWhiteSpace(realVpinballExecutable) && !File.Exists(realVpinballExecutable))
+            {
+                errorMessage = "The VPX target for the configured helper could not be found";
                 return false;
             }
 
@@ -239,6 +255,26 @@ namespace VRLauncher
             {
                 Debug.LogError($"Error opening config file: {ex.Message}");
             }
+        }
+
+        public static void OpenSetupWindow()
+        {
+            if (setupProcess != null && !setupProcess.HasExited) return;
+            setupProcess?.Dispose();
+            setupProcess = null;
+            string directory = Path.GetDirectoryName(ConfigFilePath);
+            string script = Path.Combine(directory, "tools", "setup.ps1");
+            if (!File.Exists(script)) throw new FileNotFoundException("The setup tool is not installed. Reinstall the launcher or edit launcher-config.json.", script);
+            var start = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"WindowsPowerShell\v1.0\powershell.exe"),
+                Arguments = "-NoProfile -ExecutionPolicy Bypass -STA -File \"" + script + "\" -LauncherDirectory \"" + directory + "\"",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WorkingDirectory = directory
+            };
+            setupProcess = System.Diagnostics.Process.Start(start);
+            Debug.Log("Desktop setup window opened.");
         }
     }
 }

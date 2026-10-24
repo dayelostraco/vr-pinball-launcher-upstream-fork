@@ -49,7 +49,16 @@ namespace VRLauncher
             _ = UnityMainThreadDispatcher.Instance;
             MediaCache cache = gameObject.AddComponent<MediaCache>();
 
-            List<TableEntry> tables = TableCatalog.Scan(LauncherPaths.CatalogSettingsFrom(config), new DiskFileSystem());
+            string setupError;
+            bool setupNeeded = !config.Validate(out setupError) || LauncherConfig.LoadWarning != null;
+            List<TableEntry> tables;
+            try { tables = TableCatalog.Scan(LauncherPaths.CatalogSettingsFrom(config), new DiskFileSystem()); }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                Debug.LogWarning("Could not read the tables folder: " + ex.Message);
+                tables = new List<TableEntry>();
+                setupNeeded = true;
+            }
             LogCatalog(tables, config);
 
             state = LauncherState.Load(Path.Combine(Application.persistentDataPath, "state.json"));
@@ -68,6 +77,11 @@ namespace VRLauncher
             }
             room = ArcRoom.Create(view, state, cache, coinDoorImage);
             if (tables.Count == 0) room.ShowNotice($"Tables folder: {config.tablesDirectory}");
+            if (setupNeeded)
+            {
+                Debug.LogWarning("Setup needs attention: " + (LauncherConfig.LoadWarning ?? setupError));
+                room.ShowNotice("Setup needs attention. Press F2 on the PC to review locations and checks.");
+            }
 
             fader = ScreenFader.Create(head);
             fader.SetImmediate(1f);
@@ -81,6 +95,11 @@ namespace VRLauncher
             input.JumpLetter += direction => { room.ClearNotice(); room.JumpLetter(direction); };
             input.SurpriseMe += () => { room.ClearNotice(); room.SurpriseMe(); };
             input.ToggleDetails += room.ToggleDetails;
+            input.OpenSetup += () =>
+            {
+                try { LauncherConfig.OpenSetupWindow(); }
+                catch (Exception ex) { Debug.LogWarning(ex.Message); room.ShowNotice("Setup tool is unavailable. Reinstall the launcher or review its configuration file."); }
+            };
             input.ToggleFavorite += ToggleFavorite;
             input.Launch += () => StartCoroutine(LaunchSelected());
             input.Quit += Quit;

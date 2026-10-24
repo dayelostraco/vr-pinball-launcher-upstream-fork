@@ -56,9 +56,10 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a &desktop shortcut"; GroupDescription: "Shortcuts:"
-Name: "setupvpxvr"; Description: "Set up VPinballX for VR (downloads the VR build if you don't have it)"; GroupDescription: "Additional setup (recommended):"
-Name: "setupvpinmame"; Description: "Set up VPinMAME, the ROM emulator most tables need (needs admin to register)"; GroupDescription: "Additional setup (recommended):"
-Name: "setupbridge"; Description: "Set up the VR controller bridge (installs AutoHotkey if needed)"; GroupDescription: "Additional setup (recommended):"
+Name: "reviewsetup"; Description: "Review an existing VPX installation and check setup"; GroupDescription: "Setup:"
+Name: "setupvpxvr"; Description: "Legacy setup: download/configure the GL VR build"; GroupDescription: "Optional installations:"; Flags: unchecked
+Name: "setupvpinmame"; Description: "Install/register legacy VPinMAME (needs admin to register)"; GroupDescription: "Optional installations:"; Flags: unchecked
+Name: "setupbridge"; Description: "Set up the external VR controller bridge"; GroupDescription: "Optional installations:"; Flags: unchecked
 
 [Files]
 ; Unity build output. The dev build's launcher-config.json holds machine-specific
@@ -69,13 +70,20 @@ Source: "launcher-config.default.json"; DestDir: "{app}"; DestName: "launcher-co
 ; Controller bridge + the setup script (sourced from the repo root, not the build).
 Source: "..\ControllerBridge\*"; DestDir: "{app}\ControllerBridge"; Flags: recursesubdirs createallsubdirs ignoreversion
 Source: "..\install.ps1"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\tools\setup.ps1"; DestDir: "{app}\tools"; Flags: ignoreversion
+Source: "..\tools\SetupCore.psm1"; DestDir: "{app}\tools"; Flags: ignoreversion
+Source: "..\tools\VpxBackgroundInput.cs"; DestDir: "{app}\tools"; Flags: ignoreversion
+Source: "..\tools\install-vpx-background-input.ps1"; DestDir: "{app}\tools"; Flags: ignoreversion
+Source: "..\docs\setup.md"; DestDir: "{app}\docs"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\VR Pinball Launcher"; Filename: "{app}\{#AppExeName}"
+Name: "{group}\VR Pinball Launcher Setup"; Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -STA -WindowStyle Hidden -File ""{app}\tools\setup.ps1"""; WorkingDir: "{app}"; IconFilename: "{app}\{#AppExeName}"
 Name: "{group}\Uninstall VR Pinball Launcher"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\VR Pinball Launcher"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon
 
 [Run]
+Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -STA -WindowStyle Hidden -File ""{app}\tools\setup.ps1"""; WorkingDir: "{app}"; Flags: waituntilterminated skipifsilent; Tasks: reviewsetup
 ; Optional post-install setup steps -- only run for ticked tasks. A console
 ; window is shown so the user can see the VPX download / AutoHotkey installer.
 Filename: "powershell.exe"; \
