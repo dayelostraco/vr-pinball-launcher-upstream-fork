@@ -98,7 +98,7 @@ namespace VRLauncher
                 return false;
             }
 
-            LaunchCommand command = VpxProfiles.Resolve(tablePath, vpinballExecutable, vpxProfiles, tableProfiles);
+            LaunchCommand command = VpxProfiles.Resolve(tablePath, vpinballExecutable, vpxProfiles, tableProfiles, LauncherPaths.AppDirectory);
             if (!File.Exists(command.Executable))
             {
                 UnityEngine.Debug.LogError($"VPinballX executable not found: {command.Executable}");
@@ -219,7 +219,10 @@ namespace VRLauncher
 
             UnityEngine.Debug.Log($"TableLauncher configured to use VPinballX at: {vpinballExecutable}");
             foreach (TableProfile entry in tableProfiles)
+            {
+                if (entry == null) continue;
                 UnityEngine.Debug.Log($"Table '{entry.table}' uses VPX profile '{entry.profile}'");
+            }
         }
 
         void Update()

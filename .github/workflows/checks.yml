@@ -1,0 +1,36 @@
+name: Checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Source, setup, backup and installation contracts
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          ./tools/check-source.ps1
+          ./tools/test-installation-contract.ps1
+          ./tools/test-setup.ps1
+          ./tools/test-backup.ps1
+      - name: GUI fixture smoke test
+        shell: powershell
+        run: ./tools/test-setup-ui.ps1
+  python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m pytest tools/tests -q -p no:cacheprovider
+      - run: python tools/check-docs.py

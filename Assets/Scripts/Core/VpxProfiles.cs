@@ -39,13 +39,15 @@ namespace VRLauncher
         public string WorkingDirectory { get; }
         /// <summary>The profile name, or null for the default install.</summary>
         public string ProfileName { get; }
+        public string IniFile { get; }
 
-        public LaunchCommand(string executable, string arguments, string workingDirectory, string profileName)
+        public LaunchCommand(string executable, string arguments, string workingDirectory, string profileName, string iniFile = null)
         {
             Executable = executable;
             Arguments = arguments;
             WorkingDirectory = workingDirectory;
             ProfileName = profileName;
+            IniFile = iniFile;
         }
     }
 
@@ -59,8 +61,13 @@ namespace VRLauncher
         /// name isn't defined, use the default executable. Matching ignores case.
         /// </summary>
         public static LaunchCommand Resolve(string tablePath, string defaultExecutable,
-                                            VpxProfile[] profiles, TableProfile[] tables)
+                                            VpxProfile[] profiles, TableProfile[] tables, string appDirectory = null)
         {
+            if (appDirectory != null)
+            {
+                tablePath = VpxPaths.Resolve(tablePath, appDirectory);
+                defaultExecutable = VpxPaths.Resolve(defaultExecutable, appDirectory);
+            }
             VpxProfile profile = FindProfile(Path.GetFileNameWithoutExtension(tablePath), profiles, tables);
             if (profile == null)
             {
@@ -68,19 +75,21 @@ namespace VRLauncher
                                          Path.GetDirectoryName(defaultExecutable), null);
             }
 
+            string executable = appDirectory == null ? profile.executable : VpxPaths.Resolve(profile.executable, appDirectory);
+            string ini = appDirectory == null ? profile.iniFile : VpxPaths.Resolve(profile.iniFile, appDirectory);
             string args = $"-Play \"{tablePath}\"";
-            if (!string.IsNullOrEmpty(profile.iniFile))
-                args = $"-Ini \"{profile.iniFile}\" " + args;
+            if (!string.IsNullOrEmpty(ini))
+                args = $"-Ini \"{ini}\" " + args;
 
             string workingDir;
             if (string.IsNullOrEmpty(profile.workingDirectory))
-                workingDir = Path.GetDirectoryName(profile.executable);
+                workingDir = Path.GetDirectoryName(executable);
             else if (string.Equals(profile.workingDirectory, TableFolder, StringComparison.OrdinalIgnoreCase))
                 workingDir = Path.GetDirectoryName(tablePath);
             else
-                workingDir = profile.workingDirectory;
+                workingDir = appDirectory == null ? profile.workingDirectory : VpxPaths.Resolve(profile.workingDirectory, appDirectory);
 
-            return new LaunchCommand(profile.executable, args, workingDir, profile.name);
+            return new LaunchCommand(executable, args, workingDir, profile.name, ini);
         }
 
         private static VpxProfile FindProfile(string stem, VpxProfile[] profiles, TableProfile[] tables)

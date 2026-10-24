@@ -36,16 +36,6 @@ namespace VRLauncher
         [Tooltip("Folder of per-table media fetched by tools/fetch_media.py, one subfolder per table (supports both relative and absolute paths)")]
         public string tableMediaDirectory = @"Media\Tables";
 
-        [Header("Menu Settings")]
-        [Tooltip("Distance from camera to place menu")]
-        public float menuDistance = 2.0f;
-
-        [Tooltip("Height offset for menu")]
-        public float menuHeight = 1.5f;
-
-        [Tooltip("Scale of menu panel")]
-        public float menuScale = 0.01f;
-
         [Header("Application Settings")]
         [Tooltip("Show debug console window")]
         public bool showDebugConsole = false;
@@ -206,14 +196,14 @@ namespace VRLauncher
                 return false;
             }
 
-            if (!File.Exists(vpinballExecutable))
+            if (!File.Exists(LauncherPaths.Resolve(vpinballExecutable)))
             {
                 errorMessage = $"VPinball executable not found: {vpinballExecutable}";
                 return false;
             }
 
             if (!Path.GetFileName(vpinballExecutable).StartsWith("VPinballX", StringComparison.OrdinalIgnoreCase)
-                && !string.IsNullOrWhiteSpace(realVpinballExecutable) && !File.Exists(realVpinballExecutable))
+                && !string.IsNullOrWhiteSpace(realVpinballExecutable) && !File.Exists(LauncherPaths.Resolve(realVpinballExecutable)))
             {
                 errorMessage = "The VPX target for the configured helper could not be found";
                 return false;
@@ -225,7 +215,7 @@ namespace VRLauncher
                 return false;
             }
 
-            if (!Directory.Exists(tablesDirectory))
+            if (!Directory.Exists(LauncherPaths.Resolve(tablesDirectory)))
             {
                 errorMessage = $"Tables directory not found: {tablesDirectory}";
                 return false;

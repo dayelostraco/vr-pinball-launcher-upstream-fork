@@ -78,15 +78,15 @@ namespace VRLauncher
             room = ArcRoom.Create(view, state, cache, coinDoorImage);
             room.ReadinessDetails = entry =>
             {
-                LaunchCommand command = VpxProfiles.Resolve(entry.FullPath, config.vpinballExecutable, config.vpxProfiles, config.tableProfiles);
-                string actual = command.ProfileName == null ? config.realVpinballExecutable : command.Executable;
-                if (string.IsNullOrEmpty(actual) && Path.GetFileName(command.Executable).StartsWith("VPinballX", StringComparison.OrdinalIgnoreCase)) actual = command.Executable;
-                string root = string.IsNullOrEmpty(actual) ? null : Path.GetDirectoryName(actual);
-                return TableReadiness.Describe(entry.FullPath, command, actual, new[] {
-                    Path.Combine(Path.GetDirectoryName(entry.FullPath), "pinmame", "roms"),
-                    root == null ? null : Path.Combine(root, "VPinMAME", "roms"),
-                    root == null ? null : Path.Combine(root, "plugins", "pinmame", "pinmame", "roms")
-                }, state, entry.RelativePath);
+                try
+                {
+                    LaunchCommand command = VpxProfiles.Resolve(entry.FullPath, config.vpinballExecutable, config.vpxProfiles, config.tableProfiles, LauncherPaths.AppDirectory);
+                    string actual = VpxPaths.Target(command.Executable, command.ProfileName == null ? config.realVpinballExecutable : "", LauncherPaths.AppDirectory);
+                    string registered = WindowsRomRegistry.ReadRomPaths();
+                    return TableReadiness.Describe(entry.FullPath, command, actual, VpxPaths.RomDirectories(entry.FullPath, actual, registered), state, entry.RelativePath);
+                }
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException || ex is System.Security.SecurityException)
+                { return "Readiness could not be checked. Open F2 setup to review paths."; }
             };
             if (tables.Count == 0) room.ShowNotice($"Tables folder: {config.tablesDirectory}");
             if (setupNeeded)

@@ -18,6 +18,7 @@ namespace VRLauncher.EditorTools
         public static void BuildWindows64()
         {
             string output = GetArg("-buildOutput") ?? DefaultOutput;
+            PlayerSettings.bundleVersion = GetArg("-buildVersion") ?? "1.1.0";
 
             string[] scenes = EditorBuildSettings.scenes
                 .Where(scene => scene.enabled)

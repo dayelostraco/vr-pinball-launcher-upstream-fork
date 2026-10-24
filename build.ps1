@@ -13,7 +13,7 @@
 
 param(
     [string]$BuildDir      = (Join-Path $PSScriptRoot "Build"),
-    [string]$Version       = "1.0.0",
+    [string]$Version       = "1.1.0",
     [string]$UnityExe      = "",
     [switch]$SkipInstaller,
     [switch]$Deploy
@@ -53,6 +53,7 @@ Write-Host "Building (first import can take several minutes)..."
     -projectPath $projectPath `
     -executeMethod VRLauncher.EditorTools.BuildScript.BuildWindows64 `
     -buildOutput $output `
+    -buildVersion $Version `
     -logFile $logFile | Out-Null
 
 Wait-UnityExit -ExePath $unity -Since $started
@@ -118,12 +119,16 @@ if ($Deploy) {
     }
     $toolDestination = Join-Path $dst 'tools'
     New-Item -ItemType Directory -Force -Path $toolDestination | Out-Null
-    foreach ($tool in @('setup.ps1', 'SetupCore.psm1', 'VpxBackgroundInput.cs', 'install-vpx-background-input.ps1')) {
+    foreach ($tool in @('setup.ps1', 'SetupCore.psm1', 'SetupPaths.ps1', 'SetupBackup.ps1', 'SetupBackupPage.ps1', 'VpxBackgroundInput.cs', 'install-vpx-background-input.ps1')) {
         Copy-Item -LiteralPath (Join-Path $PSScriptRoot ('tools\' + $tool)) -Destination $toolDestination -Force
     }
     $docsDestination = Join-Path $dst 'docs'
     New-Item -ItemType Directory -Force -Path $docsDestination | Out-Null
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'docs\setup.md') -Destination $docsDestination -Force
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'install.ps1') -Destination $dst -Force
+    foreach ($notice in @('LICENSE', 'THIRD-PARTY-NOTICES.md')) {
+        Copy-Item -LiteralPath (Join-Path $PSScriptRoot $notice) -Destination $dst -Force
+    }
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'licenses') -Destination $dst -Recurse -Force
     Write-Host "Deployed and verified all launcher assemblies (launcher-config.json, ControllerBridge\, Media\ preserved)" -ForegroundColor Green
 }

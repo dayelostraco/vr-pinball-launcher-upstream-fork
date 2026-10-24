@@ -13,7 +13,7 @@
 ;   BuildDir    -- folder with the Unity build output (vr-launch.exe, *_Data, ...)
 
 #ifndef AppVersion
-  #define AppVersion "1.0.0"
+  #define AppVersion "1.1.0"
 #endif
 #ifndef BuildDir
   #define BuildDir "..\Build"
@@ -21,8 +21,8 @@
 
 #define AppName "VR Pinball Launcher"
 #define AppExeName "vr-launch.exe"
-#define AppPublisher "keithbphillips"
-#define AppUrl "https://github.com/keithbphillips/vr-pinball-launcher"
+#define AppPublisher "VR Pinball Launcher contributors (original: keithbphillips)"
+#define AppUrl "https://github.com/dayelostraco/vr-pinball-launcher"
 
 [Setup]
 AppId={{8804A507-FC38-44F5-9E05-CF9BF2913F64}
@@ -32,11 +32,9 @@ AppPublisher={#AppPublisher}
 AppPublisherURL={#AppUrl}
 AppSupportURL={#AppUrl}
 WizardStyle=modern
-; Let the user choose "all users" (Program Files, needs admin) or "just me"
-; (%LocalAppData%\Programs, no admin). {autopf} follows that choice.
+; Per-user installation keeps configuration and setup backups writable.
 PrivilegesRequired=lowest
-PrivilegesRequiredOverridesAllowed=dialog
-DefaultDirName={autopf}\VR Pinball Launcher
+DefaultDirName={localappdata}\Programs\VR Pinball Launcher
 DefaultGroupName=VR Pinball Launcher
 DisableProgramGroupPage=yes
 OutputDir=..\dist
@@ -72,9 +70,15 @@ Source: "..\ControllerBridge\*"; DestDir: "{app}\ControllerBridge"; Flags: recur
 Source: "..\install.ps1"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\tools\setup.ps1"; DestDir: "{app}\tools"; Flags: ignoreversion
 Source: "..\tools\SetupCore.psm1"; DestDir: "{app}\tools"; Flags: ignoreversion
+Source: "..\tools\SetupPaths.ps1"; DestDir: "{app}\tools"; Flags: ignoreversion
+Source: "..\tools\SetupBackup.ps1"; DestDir: "{app}\tools"; Flags: ignoreversion
+Source: "..\tools\SetupBackupPage.ps1"; DestDir: "{app}\tools"; Flags: ignoreversion
 Source: "..\tools\VpxBackgroundInput.cs"; DestDir: "{app}\tools"; Flags: ignoreversion
 Source: "..\tools\install-vpx-background-input.ps1"; DestDir: "{app}\tools"; Flags: ignoreversion
 Source: "..\docs\setup.md"; DestDir: "{app}\docs"; Flags: ignoreversion
+Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\THIRD-PARTY-NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\licenses\*"; DestDir: "{app}\licenses"; Flags: recursesubdirs createallsubdirs ignoreversion
 
 [Icons]
 Name: "{group}\VR Pinball Launcher"; Filename: "{app}\{#AppExeName}"

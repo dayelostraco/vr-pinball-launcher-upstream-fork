@@ -15,10 +15,10 @@
 #                                       (no apostrophes in <msg>)
 set -euo pipefail
 
-HOST=sigilark-gpu
-WIN_REPO='C:\Users\dayel\Development\GitHub\vr-pinball-launcher'
-SCP_REPO='C:/Users/dayel/Development/GitHub/vr-pinball-launcher'
-SSH_URL='git@github.com:dayelostraco/vr-pinball-launcher.git'
+HOST=${VRL_REMOTE_HOST:?Set VRL_REMOTE_HOST to your Windows SSH alias}
+WIN_REPO=${VRL_REMOTE_REPO:?Set VRL_REMOTE_REPO to your Windows checkout path}
+SCP_REPO=${VRL_REMOTE_SCP_REPO:?Set VRL_REMOTE_SCP_REPO to its forward-slash SCP path}
+SSH_URL=${VRL_REMOTE_GIT_URL:-$(git remote get-url origin)}
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
 on_pc() {

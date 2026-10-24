@@ -19,12 +19,12 @@ namespace VRLauncher
             {
                 return null;
             }
-            return Path.IsPathRooted(path) ? path : Path.GetFullPath(Path.Combine(AppDirectory, path));
+            return VpxPaths.Resolve(path, AppDirectory);
         }
 
         public static CatalogSettings CatalogSettingsFrom(LauncherConfig config) => new CatalogSettings
         {
-            TablesDirectory = config.tablesDirectory,
+            TablesDirectory = Resolve(config.tablesDirectory),
             SearchSubdirectories = config.searchSubdirectories,
             TableMediaDirectory = Resolve(config.tableMediaDirectory),
             WheelDirectory = Resolve(config.wheelDirectory)

@@ -139,6 +139,8 @@ namespace VRLauncher.EditorTools
             return camera;
         }
 
+        public static void RenderImage(Camera camera, string path) => Render(camera, path);
+
         private static void Render(Camera camera, string path)
         {
             foreach (var text in UnityEngine.Object.FindObjectsByType<TMPro.TMP_Text>())

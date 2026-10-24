@@ -21,7 +21,8 @@ namespace VRLauncher
                                       LauncherState state, string relativePath)
         {
             var lines = new List<string>();
-            bool missing = !File.Exists(table) || !File.Exists(command.Executable) || !Directory.Exists(command.WorkingDirectory);
+            bool missingIni = !string.IsNullOrEmpty(command.IniFile) && !File.Exists(command.IniFile);
+            bool missing = !File.Exists(table) || !File.Exists(command.Executable) || !Directory.Exists(command.WorkingDirectory) || missingIni;
             string evidence = "ROM / DMD requirements: unknown (embedded script not scanned)";
             try
             {
@@ -49,14 +50,13 @@ namespace VRLauncher
                         if (!Regex.IsMatch(requirements.rom, @"\A[a-zA-Z0-9_\-]+\z")) throw new InvalidDataException("Invalid ROM name");
                         bool found = (romDirectories ?? Array.Empty<string>()).Any(d => !string.IsNullOrEmpty(d) && File.Exists(Path.Combine(d, requirements.rom + ".zip")));
                         checks.Add("ROM " + requirements.rom + (found ? ": ZIP found (contents unverified)" : ": not found in checked libraries"));
-                        if (!found) evidence = "ROM library needs verification";
                         // A library may be configured outside our detected roots; absence is uncertain, not a definitive failure.
                     }
                     foreach (string plugin in requirements.plugins ?? Array.Empty<string>())
                     {
                         if (!Regex.IsMatch(plugin ?? "", @"\A(?:pinmame|serum|scoreview|flexdmd|pup|b2s)\z")) throw new InvalidDataException("Unsupported plugin name");
                         bool found = !string.IsNullOrEmpty(actualVpx) && File.Exists(Path.Combine(Path.GetDirectoryName(actualVpx), "plugins", plugin, "plugin-" + plugin + "64.dll"));
-                        checks.Add(plugin + (found ? ": installed (enablement unverified)" : ": native plugin not detected"));
+                        checks.Add(plugin + (string.IsNullOrEmpty(actualVpx) ? ": target unknown; review helper in setup" : found ? ": installed (enablement unverified)" : ": native plugin not detected"));
                     }
                     evidence = checks.Count > 0 ? string.Join("\n", checks) : "Requirements not specified";
                 }
@@ -72,6 +72,7 @@ namespace VRLauncher
             if (!File.Exists(table)) lines.Add("Table file missing");
             if (!File.Exists(command.Executable)) lines.Add("Launch program missing");
             if (!Directory.Exists(command.WorkingDirectory)) lines.Add("Working folder missing");
+            if (missingIni) lines.Add("Profile INI missing");
             lines.Add(evidence);
             DateTime? attempt = state.LastLaunchTime(relativePath);
             lines.Add("Last launch: " + (attempt.HasValue ? attempt.Value.ToLocalTime().ToString("g") : "Not recorded"));

@@ -153,7 +153,8 @@ session is not labelled as verified gameplay.
 A single literal `cGameName`, `GameName` or `Controller.GameName` assignment in
 an adjacent `.vbs` can identify a ROM. Dynamic/ambiguous assignments and embedded
 scripts remain unknown. ROM checks look for ZIP presence in common table-local
-and VPX libraries; custom ROM locations and ZIP contents require verification.
+and VPX libraries plus absolute registry-configured libraries; custom table INI
+locations and ZIP contents require verification.
 Native plugin presence does not verify enablement, per-table INIs or legacy COM.
 
 For tables whose requirements are known, an optional adjacent

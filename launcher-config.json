@@ -1,11 +1,13 @@
 {
-  "vpinballExecutable": "C:\\Visual Pinball\\VPinballX_GL64.exe",
-  "tablesDirectory": "C:\\Visual Pinball\\Tablesvr",
+  "vpinballExecutable": "C:\\Visual Pinball\\VPinballX_BGFX64.exe",
+  "realVpinballExecutable": "",
+  "tablesDirectory": "C:\\Visual Pinball\\Tables",
   "searchSubdirectories": true,
-  "wheelDirectory": "C:\\Visual Pinball\\Media\\Wheel",
+  "wheelDirectory": "Media\\Wheel",
   "tableMediaDirectory": "Media\\Tables",
-  "menuDistance": 2.0,
-  "menuHeight": 1.5,
-  "menuScale": 0.01,
-  "showDebugConsole": false
+  "showDebugConsole": false,
+  "enableControllerBridge": false,
+  "controllerBridgePath": "",
+  "controllerBridgeArgs": "",
+  "controllerBridgeWorkingDir": ""
 }
