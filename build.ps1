@@ -103,5 +103,13 @@ if ($Deploy) {
         $source = Join-Path $BuildDir $file
         if (Test-Path $source) { Copy-Item $source -Destination $dst -Force }
     }
-    Write-Host "Deployed (launcher-config.json, ControllerBridge\, Media\ preserved)" -ForegroundColor Green
+    foreach ($assembly in @('Assembly-CSharp.dll', 'VRLauncher.Arcade.dll', 'VRLauncher.Core.dll')) {
+        $relative = Join-Path 'vr-launch_Data\Managed' $assembly
+        $built = Join-Path $BuildDir $relative
+        $installed = Join-Path $dst $relative
+        if ((Get-FileHash -LiteralPath $built).Hash -ne (Get-FileHash -LiteralPath $installed).Hash) {
+            throw "Installed runtime assembly mismatch: $assembly"
+        }
+    }
+    Write-Host "Deployed and verified all launcher assemblies (launcher-config.json, ControllerBridge\, Media\ preserved)" -ForegroundColor Green
 }
