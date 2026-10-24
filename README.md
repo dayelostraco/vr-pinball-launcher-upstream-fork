@@ -53,6 +53,10 @@ folder and VPinMAME's ROM folder), so you can drag new `.vpx` tables and ROM `.z
 files straight in.
 
 The desktop setup workflow is documented in [Existing-installation setup](docs/setup.md).
+Its **Backup and restore** page exports settings, profiles, favorites and history
+to a ZIP, and previews restores with a safety backup. Table details (left-stick
+click) show launch readiness evidence and the last launch result; initialization
+is kept separate from verified gameplay.
 Optional legacy installation steps run the bundled `install.ps1`; these remain
 available separately. You can still edit `launcher-config.json` by hand.
 See [In-Game Controls](#in-game-controls-while-a-table-is-running).

@@ -33,14 +33,14 @@ function New-Box($Parent,$X,$Y,$Width) {
 function Show-Problem($Problem) { [Windows.Forms.MessageBox]::Show($form,[string]$Problem,'Setup needs attention','OK','Warning') | Out-Null }
 $header=[Windows.Forms.Panel]::new();$header.Dock='Top';$header.Height=100;$form.Controls.Add($header)
 $heading=New-Label $header 'Connect your existing pinball setup' 24 14 1000 34;$heading.Font=[Drawing.Font]::new('Segoe UI',19,[Drawing.FontStyle]::Bold)
-$null=New-Label $header 'Review locations, check components, and test a table. Nothing changes until Apply.' 26 56 1000 30
+$null=New-Label $header 'Review locations, check components, test tables, and manage launcher backups.' 26 56 1000 30
 $footer=[Windows.Forms.Panel]::new();$footer.Dock='Bottom';$footer.Height=62;$form.Controls.Add($footer)
 $back=New-Button $footer 'Back' 22 12 95
 $next=New-Button $footer 'Next' 128 12 95
 $status=New-Label $footer 'Your current table overrides and play history are preserved.' 245 16 840 34;$status.Anchor='Left,Right,Top'
 $tabs=[Windows.Forms.TabControl]::new();$tabs.Dock='Fill';$form.Controls.Add($tabs);$tabs.BringToFront()
 $pages=@()
-foreach($title in @('1  Locations','2  Health','3  Test a table','4  Review and apply')){
+foreach($title in @('1  Locations','2  Health','3  Test a table','4  Review and apply','5  Backup and restore')){
     $p=[Windows.Forms.TabPage]::new($title);$p.BackColor=$form.BackColor;$p.ForeColor=$form.ForeColor;$p.AutoScroll=$true;$tabs.TabPages.Add($p);$pages+=,$p
 }
 $null=New-Label $pages[0] 'Actual VPX executable' 24 22 900
@@ -211,10 +211,53 @@ function Resize-SetupFields {
     foreach($pair in @(@($vpxBox,$vpxBrowse,$pages[0]),@($tablesBox,$tablesBrowse,$pages[0]),@($testBox,$tableBrowse,$pages[2]))){$pair[0].Width=[Math]::Max(350,$pair[2].ClientSize.Width-200);$pair[1].Left=$pair[2].ClientSize.Width-155}
     $grid.Width=[Math]::Max(600,$pages[1].ClientSize.Width-40);$grid.Height=[Math]::Max(240,$pages[1].ClientSize.Height-130)
     $testOutput.Width=[Math]::Max(600,$pages[2].ClientSize.Width-48);$review.Width=[Math]::Max(600,$pages[3].ClientSize.Width-48)
+    if($backupReview){$backupReview.Width=[Math]::Max(600,$pages[4].ClientSize.Width-48)}
 }
 $form.Add_Resize({Resize-SetupFields})
-$tabs.Add_SelectedIndexChanged({Resize-SetupFields;$back.Enabled=$tabs.SelectedIndex -gt 0;$next.Enabled=$tabs.SelectedIndex -lt 3;if($tabs.SelectedIndex -eq 1){Refresh-Health};if($tabs.SelectedIndex -eq 3){Update-Review}})
-$back.Add_Click({if($tabs.SelectedIndex -gt 0){$tabs.SelectedIndex--}});$next.Add_Click({if($tabs.SelectedIndex -lt 3){$tabs.SelectedIndex++}})
+$tabs.Add_SelectedIndexChanged({Resize-SetupFields;$back.Enabled=$tabs.SelectedIndex -gt 0;$next.Enabled=$tabs.SelectedIndex -lt ($tabs.TabPages.Count-1);if($tabs.SelectedIndex -eq 1){Refresh-Health};if($tabs.SelectedIndex -eq 3){Update-Review}})
+$back.Add_Click({if($tabs.SelectedIndex -gt 0){$tabs.SelectedIndex--}});$next.Add_Click({if($tabs.SelectedIndex -lt ($tabs.TabPages.Count-1)){$tabs.SelectedIndex++}})
+
+$null=New-Label $pages[4] 'Take your launcher settings and library history with you' 24 20 1000 36
+$null=New-Label $pages[4] 'Backups contain configuration (including profiles and controller launch settings), favorites, play counts, history and table launch results. Tables, ROMs, artwork, helper programs, VPX settings and external controller scripts are not included. Close the launcher and VPX first.' 24 62 1030 82
+$exportBackup=New-Button $pages[4] 'Export backup...' 24 152 190
+$chooseBackup=New-Button $pages[4] 'Choose backup...' 228 152 190
+$restoreSettings=[Windows.Forms.CheckBox]::new();$restoreSettings.Text='Restore launcher settings';$restoreSettings.Checked=$true;$restoreSettings.Location=[Drawing.Point]::new(24,202);$restoreSettings.Size=[Drawing.Size]::new(470,30);$pages[4].Controls.Add($restoreSettings)
+$restoreHistory=[Windows.Forms.CheckBox]::new();$restoreHistory.Text='Replace favorites and player history';$restoreHistory.Checked=$true;$restoreHistory.Location=[Drawing.Point]::new(510,202);$restoreHistory.Size=[Drawing.Size]::new(520,30);$pages[4].Controls.Add($restoreHistory)
+$keepPaths=[Windows.Forms.CheckBox]::new();$keepPaths.Text='Keep this PC''s paths, controller launch settings, profiles and table assignments';$keepPaths.Checked=$true;$keepPaths.Location=[Drawing.Point]::new(24,240);$keepPaths.Size=[Drawing.Size]::new(1030,30);$pages[4].Controls.Add($keepPaths)
+$backupReview=[Windows.Forms.TextBox]::new();$backupReview.Multiline=$true;$backupReview.ReadOnly=$true;$backupReview.ScrollBars='Vertical';$backupReview.Location=[Drawing.Point]::new(24,282);$backupReview.Size=[Drawing.Size]::new(1030,190);$backupReview.Anchor='Top,Left,Right';$backupReview.BackColor=$review.BackColor;$backupReview.ForeColor=$form.ForeColor;$pages[4].Controls.Add($backupReview)
+$backupReview.Text='Choose a backup to inspect it before restoring. Export reads saved settings; unsaved changes on other pages are not included.'
+$reviewBackup=New-Button $pages[4] 'Review restore' 24 490 180
+$restoreBackup=New-Button $pages[4] 'Restore reviewed backup' 218 490 250;$restoreBackup.Enabled=$false
+$script:backupArchive='';$script:restorePlan=$null
+function Update-BackupReview {
+    $restoreBackup.Enabled=$false;$script:restorePlan=$null
+    try{
+        if(!$script:backupArchive){throw 'Choose a backup first.'}
+        $script:restorePlan=New-SetupRestorePlan $LauncherDirectory $script:backupArchive $restoreSettings.Checked $restoreHistory.Checked $keepPaths.Checked
+        $backupReview.Text='Backup: '+$script:backupArchive+"`r`nCreated: "+$script:restorePlan.CreatedUtc+"`r`n`r`n"+($script:restorePlan.Changes -join "`r`n`r`n")
+        if($restoreSettings.Checked){
+            $proposed=[Text.Encoding]::UTF8.GetString($script:restorePlan.Files[(Join-Path $LauncherDirectory 'launcher-config.json')])|ConvertFrom-Json
+            $backupReview.AppendText("`r`n`r`nProposed program: "+(Get-SetupValue $proposed 'vpinballExecutable')+"`r`nTables: "+(Get-SetupValue $proposed 'tablesDirectory')+"`r`nProfiles: "+(@(Get-SetupValue $proposed 'vpxProfiles' @()).Count))
+        }
+        $restoreBackup.Enabled=$true
+    }catch{$backupReview.Text=$_.Exception.Message}
+}
+$chooseBackup.Add_Click({$d=[Windows.Forms.OpenFileDialog]::new();$d.Filter='Launcher backup (ZIP)|*.zip';if($d.ShowDialog($form) -eq 'OK'){$script:backupArchive=$d.FileName;Update-BackupReview};$d.Dispose()})
+$reviewBackup.Add_Click({Update-BackupReview})
+foreach($option in @($restoreSettings,$restoreHistory,$keepPaths)){$option.Add_CheckedChanged({$script:restorePlan=$null;$restoreBackup.Enabled=$false;$backupReview.Text='Options changed. Click Review restore before restoring.'})}
+$exportBackup.Add_Click({
+    $d=[Windows.Forms.SaveFileDialog]::new();$d.Filter='Launcher backup (ZIP)|*.zip';$d.FileName='VRPinballLauncher-'+(Get-Date -Format 'yyyyMMdd-HHmmss')+'.zip'
+    try{if($d.ShowDialog($form) -eq 'OK'){$saved=Export-SetupBackup $LauncherDirectory $d.FileName;$backupReview.Text='Backup exported: '+$saved;$status.Text='Backup exported. Existing settings unchanged.'}}catch{Show-Problem $_.Exception.Message}finally{$d.Dispose()}
+})
+$restoreBackup.Add_Click({
+    try{
+        if(!$script:restorePlan){throw 'Review the backup first.'}
+        if([Windows.Forms.MessageBox]::Show($form,($backupReview.Text+"`r`n`r`nReplace the selected settings now? Current files will be backed up first."),'Restore launcher backup','YesNo','Question') -ne 'Yes'){return}
+        $saved=Save-SetupRestorePlan $script:restorePlan
+        [Windows.Forms.MessageBox]::Show($form,('Restored. Setup will close; reopen it to review locations before launching. Previous files: '+$saved),'Backup restored','OK','Information')|Out-Null
+        $form.Close()
+    }catch{Show-Problem $_.Exception.Message;$script:restorePlan=$null;$restoreBackup.Enabled=$false}
+})
 $form.Add_FormClosed({$testTimer.Stop();$testTimer.Dispose();if($script:testProcess){$script:testProcess.Dispose()}})
 $script:smokeFailure=''
 if($SmokeTest){

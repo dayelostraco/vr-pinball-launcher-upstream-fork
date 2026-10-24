@@ -103,8 +103,69 @@ of overwriting those edits; reopen setup to refresh it.
 To undo, close the launcher and copy the original JSON/INI from the backup to
 the paths listed in the change summary. If replacing a helper, restore its
 matching executable and target sidecar together. Restart the launcher afterward.
-No table scripts, ROMs, artwork, per-table overrides, play history or controller
-firmware are rewritten by setup. Existing table-local VPX settings remain intact.
+Location setup does not rewrite table scripts, ROMs, artwork, per-table overrides,
+play history or controller firmware. Existing table-local VPX settings remain intact.
+
+## Backup and restore
+
+The fifth page exports a ZIP containing saved `launcher-config.json` and, when
+present, the player's `state.json`. This includes favorites, play counts, recent
+history, browsing selection, table launch results, profiles and assignments.
+Unsaved edits on other setup pages are not exported. Close the launcher and VPX
+first so the files represent a settled state.
+
+Choose a backup, select settings and/or history, then **Review restore**. By
+default, restoring preferences keeps this PC's executable, tables, media and
+controller launch paths, profiles and table assignments. Uncheck that option to
+restore the complete configuration, including profiles, when moving to another
+PC; review all paths before launching. Restoring history replaces it, rather
+than merging it. Missing history is reported before changes can be applied.
+
+**Restore reviewed backup** shows the proposed changes for confirmation, saves
+the current files under `SetupBackups/restore-<timestamp>`, then restores the
+selected files. Setup closes afterward so reopening reloads the restored values.
+If a destination changes after review, restore stops. A failed restore rolls
+back files already written. To undo, close the launcher and copy the saved
+originals back to the paths in `restore-destinations.json`; an originally absent
+file can be removed instead. Restart the launcher afterward.
+
+The archive has a versioned manifest and SHA-256 integrity checks. Unexpected,
+duplicate, oversized or damaged entries are rejected without extracting files.
+Only launcher JSON files are restored. Tables, ROMs, artwork, VPX/table INIs,
+helper binaries/sidecars and external controller scripts are not included.
+Backups contain personal play history and local paths; keep them out of the
+public source repository.
+
+## Table readiness in VR
+
+Click the left stick to open table details. The panel shows the resolved launch
+profile/program, file checks, detectable ROM/plugin requirements, last launch
+time and result, alongside play count and last played date. New launch results
+are recorded independently of successful-session counts. Existing history is
+preserved; earlier attempts have no recorded result.
+
+**Needs attention** identifies missing launch files or a reported launch problem.
+**Not yet tested** means no startup confirmation has been recorded. **Startup
+confirmed - gameplay unverified** means VPX logged initialization; it does not
+prove that coins, controls, audio, DMD artwork or scoring work. A last-played
+session is not labelled as verified gameplay.
+
+A single literal `cGameName`, `GameName` or `Controller.GameName` assignment in
+an adjacent `.vbs` can identify a ROM. Dynamic/ambiguous assignments and embedded
+scripts remain unknown. ROM checks look for ZIP presence in common table-local
+and VPX libraries; custom ROM locations and ZIP contents require verification.
+Native plugin presence does not verify enablement, per-table INIs or legacy COM.
+
+For tables whose requirements are known, an optional adjacent
+`Table Name.vpx.readiness.json` can declare them without changing the table:
+
+```json
+{"rom":"afm_113b","plugins":["pinmame","serum","scoreview"]}
+```
+
+Supported native plugin names are `pinmame`, `serum`, `scoreview`, `flexdmd`,
+`pup` and `b2s`. A manifest takes precedence over script detection. These
+sidecars stay with tables and are not part of the launcher backup.
 
 This first version focuses on connecting and diagnosing **existing Windows
 installations**. It does not install every display system or automatically
@@ -116,6 +177,7 @@ tasks remain separate, unchecked options in the installer.
 ```powershell
 .\tools\test-setup.ps1
 .\tools\test-setup-ui.ps1
+.\tools\test-backup.ps1
 .\tools\setup.ps1 -LauncherDirectory "$env:LOCALAPPDATA\Programs\VR Pinball Launcher" -ReportOnly
 .\tools\setup.ps1 -LauncherDirectory "$env:LOCALAPPDATA\Programs\VR Pinball Launcher" -PreviewDirectory .\Logs\setup-preview
 ```
@@ -124,6 +186,6 @@ The core tests use generated temporary files, exercise config preservation,
 rollback, helper compilation and Windows argument round-trips. Close the
 launcher/VPX first. The UI test uses a guarded dummy executable that exits 42;
 it does not launch VPX, change live configuration or mark startup successful.
-Preview mode renders all four pages and closes without applying changes or
+Preview mode renders all five pages and closes without applying changes or
 running tables. Unity EditMode tests and complete-player startup checks remain
 part of the normal deployment workflow.

@@ -76,6 +76,7 @@ namespace VRLauncher
         public string LastLaunchError { get; private set; }
         public string LastReturnNotice { get; private set; }
         public bool LastSessionCounted { get; private set; }
+        public bool LastStartupConfirmed => feedback != null && feedback.StartupCompleted;
 
         public delegate void TableExitedHandler();
         public event TableExitedHandler OnTableExited;

@@ -52,6 +52,7 @@ namespace VRLauncher
         public string ViewTabs => viewTabs.text;
         public bool DetailsVisible => detailsPanel.activeSelf;
         public string DetailsText => detailsBody.text;
+        public Func<TableEntry, string> ReadinessDetails { get; set; }
 
         public CabinetView CabinetAt(int offset) => cabinets[offset];
 
@@ -194,19 +195,19 @@ namespace VRLauncher
             panel.SetParent(transform, false);
             panel.localPosition = ArcLayout.SlotPosition(0f) + new Vector3(1.2f, 1.15f, -0.9f);
             panel.localRotation = Quaternion.Euler(0f, 35f, 0f);
-            PanelQuad(panel, "DetailsBackground", new Vector3(0f, 0f, 0.012f), new Vector2(1.0f, 1.08f), new Color(0.025f, 0.04f, 0.055f));
+            PanelQuad(panel, "DetailsBackground", new Vector3(0f, 0f, 0.012f), new Vector2(1.0f, 1.55f), new Color(0.025f, 0.04f, 0.055f));
 
-            detailsTitle = PlateLine(panel, "DetailsTitle", 0.41f, new Vector2(0.9f, 0.15f));
+            detailsTitle = PlateLine(panel, "DetailsTitle", 0.65f, new Vector2(0.9f, 0.15f));
             detailsTitle.textWrappingMode = TextWrappingModes.Normal;
             detailsTitle.color = new Color(0.85f, 0.95f, 1f);
-            detailsBody = PlateLine(panel, "DetailsBody", 0.17f, new Vector2(0.88f, 0.26f));
+            detailsBody = PlateLine(panel, "DetailsBody", 0.18f, new Vector2(0.88f, 0.72f));
             detailsBody.alignment = TextAlignmentOptions.Left;
             detailsBody.textWrappingMode = TextWrappingModes.Normal;
             HintGroup(panel, "NavigationHints", -0.225f,
                 "<b>NAVIGATE</b>\nLeft sideways: tables\nLeft up/down: views\nRight up/down: letters");
             HintGroup(panel, "ActionHints", 0.225f,
                 "<b>PLAY & EXPLORE</b>\nA: play · B: favorite · X: views\nRight click: Surprise Me\nHold Y: quit");
-            var footer = PlateLine(panel, "DetailsFooter", -0.47f, new Vector2(0.9f, 0.09f));
+            var footer = PlateLine(panel, "DetailsFooter", -0.69f, new Vector2(0.9f, 0.09f));
             footer.text = "Click left stick to close · A to play\nF2 on PC: setup";
             footer.color = new Color(0.65f, 0.75f, 0.8f);
             detailsPanel.SetActive(false);
@@ -342,7 +343,8 @@ namespace VRLauncher
                     + "\nYear: " + (entry.Year > 0 ? entry.Year.ToString() : "Unknown")
                     + "\nSessions played: " + state.PlayCount(entry.RelativePath)
                     + "\nLast played: " + (last.HasValue ? last.Value.ToLocalTime().ToString("d") : "Never")
-                    + "\nFavorite: " + (state.IsFavorite(entry.RelativePath) ? "Yes" : "No");
+                    + "\nFavorite: " + (state.IsFavorite(entry.RelativePath) ? "Yes" : "No")
+                    + (ReadinessDetails == null ? "" : "\n\n" + ReadinessDetails(entry));
             }
         }
 
@@ -460,7 +462,7 @@ namespace VRLauncher
 
         private static void HintGroup(Transform plate, string name, float x, string label)
         {
-            TextMeshPro hint = PlateLine(plate, name, -0.2f, new Vector2(0.43f, 0.22f));
+            TextMeshPro hint = PlateLine(plate, name, -0.46f, new Vector2(0.43f, 0.22f));
             hint.transform.localPosition += Vector3.right * x;
             hint.text = label;
             hint.alignment = TextAlignmentOptions.TopLeft;

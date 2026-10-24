@@ -76,6 +76,18 @@ namespace VRLauncher
                 coinDoorImage = null;
             }
             room = ArcRoom.Create(view, state, cache, coinDoorImage);
+            room.ReadinessDetails = entry =>
+            {
+                LaunchCommand command = VpxProfiles.Resolve(entry.FullPath, config.vpinballExecutable, config.vpxProfiles, config.tableProfiles);
+                string actual = command.ProfileName == null ? config.realVpinballExecutable : command.Executable;
+                if (string.IsNullOrEmpty(actual) && Path.GetFileName(command.Executable).StartsWith("VPinballX", StringComparison.OrdinalIgnoreCase)) actual = command.Executable;
+                string root = string.IsNullOrEmpty(actual) ? null : Path.GetDirectoryName(actual);
+                return TableReadiness.Describe(entry.FullPath, command, actual, new[] {
+                    Path.Combine(Path.GetDirectoryName(entry.FullPath), "pinmame", "roms"),
+                    root == null ? null : Path.Combine(root, "VPinMAME", "roms"),
+                    root == null ? null : Path.Combine(root, "plugins", "pinmame", "pinmame", "roms")
+                }, state, entry.RelativePath);
+            };
             if (tables.Count == 0) room.ShowNotice($"Tables folder: {config.tablesDirectory}");
             if (setupNeeded)
             {
@@ -220,6 +232,8 @@ namespace VRLauncher
             }
             else
             {
+                state.RecordLaunch(entry.RelativePath, DateTime.UtcNow, false, launcher.LastLaunchError ?? "The table could not start.");
+                SaveState();
                 string reason = (launcher.LastLaunchError ?? "The table could not start.") + " A: retry or browse another table.";
                 room.ShowNotice(reason);
                 launching = false;
@@ -275,6 +289,7 @@ namespace VRLauncher
             ExitBackgroundMode();
 
             if (launcher.LastSessionCounted) state.RecordPlay(launchedEntry.RelativePath, DateTime.UtcNow);
+            state.RecordLaunch(launchedEntry.RelativePath, DateTime.UtcNow, launcher.LastStartupConfirmed, launcher.LastReturnNotice);
             SaveState();
             launchedEntry = null;
 

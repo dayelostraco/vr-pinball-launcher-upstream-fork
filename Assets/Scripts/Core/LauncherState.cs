@@ -24,6 +24,15 @@ namespace VRLauncher
             public int count;
         }
 
+        [Serializable]
+        private sealed class LaunchRecord
+        {
+            public string path;
+            public string when;
+            public string result;
+            public bool startupConfirmed;
+        }
+
         // JsonUtility cannot serialise dictionaries, so plays are a list of records.
         [Serializable]
         private sealed class StateData
@@ -31,6 +40,7 @@ namespace VRLauncher
             public int version = CurrentVersion;
             public List<string> favorites = new List<string>();
             public List<PlayRecord> plays = new List<PlayRecord>();
+            public List<LaunchRecord> launches = new List<LaunchRecord>();
             public int lastView;
             public string lastSelectedPath;
         }
@@ -86,6 +96,7 @@ namespace VRLauncher
 
             if (problem == null)
             {
+                if (loaded.launches == null) loaded.launches = new List<LaunchRecord>();
                 return new LauncherState(filePath, loaded);
             }
 
@@ -154,6 +165,23 @@ namespace VRLauncher
 
         public int PlayCount(string relativePath) =>
             data.plays.FirstOrDefault(p => p.path == relativePath)?.count ?? 0;
+
+        public void RecordLaunch(string path, DateTime utcNow, bool startupConfirmed, string problem)
+        {
+            LaunchRecord record = data.launches.FirstOrDefault(p => p.path == path);
+            if (record == null) { record = new LaunchRecord { path = path }; data.launches.Add(record); }
+            record.when = utcNow.ToUniversalTime().ToString("o", CultureInfo.InvariantCulture);
+            record.startupConfirmed = startupConfirmed;
+            record.result = problem;
+        }
+
+        public string LastLaunchProblem(string path)
+        {
+            string result = data.launches.FirstOrDefault(p => p.path == path)?.result;
+            return string.IsNullOrEmpty(result) ? null : result;
+        }
+        public bool StartupConfirmed(string path) => data.launches.FirstOrDefault(p => p.path == path)?.startupConfirmed ?? false;
+        public DateTime? LastLaunchTime(string path) => ParseTime(data.launches.FirstOrDefault(p => p.path == path)?.when);
 
         /// <summary>Played tables, most recent first.</summary>
         public IReadOnlyList<string> RecentPaths() => data.plays

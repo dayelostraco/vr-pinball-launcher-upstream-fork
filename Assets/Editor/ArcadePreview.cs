@@ -91,6 +91,7 @@ namespace VRLauncher.EditorTools
 
                 var host = new GameObject("Preview");
                 ArcRoom room = ArcRoom.Create(view, state, host.AddComponent<MediaCache>(), InstalledCoinDoor());
+                if (details) room.ReadinessDetails = entry => "Not yet tested\nProfile: Default / VPinballX_BGFX64.exe\nROM / DMD requirements: unknown (embedded script not scanned)\nLast launch: Not recorded";
                 var head = new Vector3(0f, 1.66f, 0f);
                 room.Recenter(head, 0f);
                 if (details) room.ToggleDetails();
