@@ -230,8 +230,9 @@ plate under the centered cabinet shows the title, manufacturer and year, a
 star if it's a favorite, how many times it has been played, when it was last played, and the current view name
 and position.
 
-Four compact control-hint lines beneath the info plate describe left-stick
-table/view navigation, right-stick letter jumps, the A/B/X/Y actions, and Surprise Me.
+Five compact control-hint lines beneath the info plate describe left-stick
+table/view navigation, right-stick letter jumps, the A/B/X/Y actions, Surprise Me,
+and table details.
 They remain visible in all views, including empty Favorites and Recent lists.
 
 ### Controls
@@ -245,6 +246,7 @@ They remain visible in all views, including empty Favorites and Recent lists.
 | Left thumbstick down / up | Next / previous view (release to center between changes) |
 | Right thumbstick down / up | Next / previous starting letter (release to center between jumps) |
 | Right thumbstick click / keyboard R | Surprise Me: select a random table in the current view |
+| Left thumbstick click / keyboard I | Open / close the larger table-details panel |
 | Hold Y 2 s | Quit (with countdown on the info plate) |
 | Keyboard Left Shift / Left Arrow | Previous table |
 | Keyboard Right Shift / Right Arrow | Next table |
@@ -283,6 +285,11 @@ unchanged. Holding the click does not repeat, and the current table is excluded
 when there is another choice.
 
 ### State file
+
+The table-details panel sits beside the selected cabinet and shows manufacturer,
+year, session count, last-played date, and favorite status. It follows selection
+while browsing, hides during play, and closes when a view is empty. Left-stick
+click (or keyboard I) toggles it; all navigation and launch controls still work.
 
 On a normal launcher exit, the current view and selected table are saved.
 The next start restores that view and table. If the table was removed or no

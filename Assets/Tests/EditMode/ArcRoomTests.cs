@@ -130,6 +130,29 @@ namespace VRLauncher.Tests
         }
 
         [Test]
+        public void Details_TracksSelectionAndHidesDuringPlayAndEmptyViews()
+        {
+            var (_, all) = Build(3);
+            Assert.IsFalse(room.DetailsVisible);
+            state.RecordPlay(all[0].RelativePath, DateTime.UtcNow);
+            room.ToggleDetails();
+            Assert.IsTrue(room.DetailsVisible);
+            StringAssert.Contains("Sessions played: 1", room.DetailsText);
+            StringAssert.Contains("Manufacturer: Bally", room.DetailsText);
+            room.Next();
+            StringAssert.Contains("Sessions played: 0", room.DetailsText);
+            StringAssert.Contains("Last played: Never", room.DetailsText);
+            room.Suspend();
+            Assert.IsFalse(room.DetailsVisible);
+            room.Resume();
+            Assert.IsTrue(room.DetailsVisible);
+            room.CycleView();
+            Assert.IsFalse(room.DetailsVisible);
+            room.ToggleDetails();
+            Assert.IsFalse(room.DetailsVisible);
+        }
+
+        [Test]
         public void Recenter_PutsThePlayfieldAheadAndBelowTheEyes()
         {
             Build(3);

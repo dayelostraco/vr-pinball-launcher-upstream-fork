@@ -29,6 +29,10 @@ namespace VRLauncher
         private TextMeshPro infoTitle;
         private TextMeshPro infoDetail;
         private TextMeshPro infoStatus;
+        private GameObject detailsPanel;
+        private TextMeshPro detailsTitle;
+        private TextMeshPro detailsBody;
+        private bool detailsOpen;
         private string notice;
         private float scroll;
         private float scrollVelocity;
@@ -44,6 +48,8 @@ namespace VRLauncher
         public string InfoTitle => infoTitle.text;
         public string InfoDetail => infoDetail.text;
         public string InfoStatus => infoStatus.text;
+        public bool DetailsVisible => detailsPanel.activeSelf;
+        public string DetailsText => detailsBody.text;
 
         public CabinetView CabinetAt(int offset) => cabinets[offset];
 
@@ -108,6 +114,8 @@ namespace VRLauncher
             ControlHint(plate, "LetterHint", -0.155f, "Right stick up/down: jump letters");
             ControlHint(plate, "ButtonHint", -0.195f, "A: play · B: favorite · X: views · Hold Y: quit");
             ControlHint(plate, "SurpriseHint", -0.235f, "Click right stick: Surprise Me (then A to play)");
+            ControlHint(plate, "DetailsHint", -0.275f, "Click left stick: table details");
+            BuildDetailsPanel();
 
             videoTexture = new RenderTexture(1920, 1080, 0) { name = "PlayfieldVideo" };
             video = gameObject.AddComponent<VideoPlayer>();
@@ -159,6 +167,41 @@ namespace VRLauncher
             Assign();
         }
 
+        public void ToggleDetails()
+        {
+            if (view.Selected == null) return;
+            detailsOpen = !detailsOpen;
+            UpdateInfo();
+        }
+
+        private void BuildDetailsPanel()
+        {
+            detailsPanel = new GameObject("TableDetails");
+            Transform panel = detailsPanel.transform;
+            panel.SetParent(transform, false);
+            panel.localPosition = ArcLayout.SlotPosition(0f) + new Vector3(0.85f, 1.15f, -0.65f);
+            panel.localRotation = Quaternion.Euler(0f, 20f, 0f);
+
+            GameObject backing = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            Collider collider = backing.GetComponent<Collider>();
+            if (Application.isPlaying) Destroy(collider); else DestroyImmediate(collider);
+            backing.transform.SetParent(panel, false);
+            backing.transform.localPosition = new Vector3(0f, 0f, 0.01f);
+            backing.transform.localScale = new Vector3(0.86f, 0.72f, 1f);
+            backing.GetComponent<MeshRenderer>().sharedMaterial = new Material(Shader.Find("Sprites/Default")) { color = new Color(0.025f, 0.04f, 0.055f) };
+
+            detailsTitle = PlateLine(panel, "DetailsTitle", 0.23f, new Vector2(0.76f, 0.15f));
+            detailsTitle.textWrappingMode = TextWrappingModes.Normal;
+            detailsTitle.color = new Color(0.85f, 0.95f, 1f);
+            detailsBody = PlateLine(panel, "DetailsBody", 0f, new Vector2(0.74f, 0.26f));
+            detailsBody.alignment = TextAlignmentOptions.Left;
+            detailsBody.textWrappingMode = TextWrappingModes.Normal;
+            var footer = PlateLine(panel, "DetailsFooter", -0.27f, new Vector2(0.76f, 0.06f));
+            footer.text = "Click left stick to close · A to play";
+            footer.color = new Color(0.65f, 0.75f, 0.8f);
+            detailsPanel.SetActive(false);
+        }
+
         public void PreviousView()
         {
             ChangeView(-1);
@@ -205,12 +248,14 @@ namespace VRLauncher
         {
             suspended = true;
             StopVideo();
+            detailsPanel.SetActive(false);
         }
 
         public void Resume()
         {
             suspended = false;
             videoCountdown = VideoDelay;
+            UpdateInfo();
         }
 
         private void Assign()
@@ -267,6 +312,18 @@ namespace VRLauncher
             infoTitle.text = entry?.Title ?? view.EmptyMessage;
             infoDetail.text = entry == null ? string.Empty : DetailLine(entry);
             infoStatus.text = notice ?? view.PositionLabel;
+            if (entry == null) detailsOpen = false;
+            detailsPanel.SetActive(detailsOpen && !suspended);
+            if (entry != null && detailsOpen)
+            {
+                detailsTitle.text = entry.Title;
+                DateTime? last = state.LastPlayed(entry.RelativePath);
+                detailsBody.text = "Manufacturer: " + (entry.Manufacturer ?? "Unknown")
+                    + "\nYear: " + (entry.Year > 0 ? entry.Year.ToString() : "Unknown")
+                    + "\nSessions played: " + state.PlayCount(entry.RelativePath)
+                    + "\nLast played: " + (last.HasValue ? last.Value.ToLocalTime().ToString("d") : "Never")
+                    + "\nFavorite: " + (state.IsFavorite(entry.RelativePath) ? "Yes" : "No");
+            }
         }
 
         private string DetailLine(TableEntry entry)

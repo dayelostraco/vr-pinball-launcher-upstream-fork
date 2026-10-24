@@ -29,6 +29,7 @@ namespace VRLauncher
         private const int VK_F = 0x46;
         private const int VK_V = 0x56;
         private const int VK_R = 0x52;
+        private const int VK_I = 0x49;
 
         public const float QuitHoldSeconds = 2f;
 
@@ -40,6 +41,7 @@ namespace VRLauncher
         public event Action PreviousView;
         public event Action<int> JumpLetter;
         public event Action SurpriseMe;
+        public event Action ToggleDetails;
         public event Action Quit;
 
         public bool InputEnabled { get; set; } = true;
@@ -53,6 +55,7 @@ namespace VRLauncher
         private readonly ButtonEdge bButton = new ButtonEdge();
         private readonly ButtonEdge xButton = new ButtonEdge();
         private readonly ButtonEdge rightStickClick = new ButtonEdge();
+        private readonly ButtonEdge leftStickClick = new ButtonEdge();
         private readonly StickRepeat stick = new StickRepeat();
         private readonly ViewStickLatch viewStick = new ViewStickLatch();
         private readonly ViewStickLatch letterStick = new ViewStickLatch();
@@ -89,12 +92,14 @@ namespace VRLauncher
             bool view = KeyEdge(VK_V);
             bool quit = KeyEdge(VK_ESCAPE);
             bool surprise = KeyEdge(VK_R);
+            bool details = KeyEdge(VK_I);
 
             float stickX = 0f;
             Vector2 leftStick = Vector2.zero;
             Vector2 rightStick = Vector2.zero;
             bool yHeld = false;
             bool rightStickHeld = false;
+            bool leftStickHeld = false;
 
             if (left.isValid)
             {
@@ -102,7 +107,10 @@ namespace VRLauncher
                 if (left.TryGetFeatureValue(XRCommonUsages.primaryButton, out bool x) && xButton.Update(x)) view = true;
                 yHeld = left.TryGetFeatureValue(XRCommonUsages.secondaryButton, out bool y) && y;
                 if (left.TryGetFeatureValue(XRCommonUsages.primary2DAxis, out Vector2 ls)) leftStick = ls;
+                leftStickHeld = left.TryGetFeatureValue(XRCommonUsages.primary2DAxisClick, out bool leftClicked) && leftClicked;
             }
+
+            details |= leftStickClick.Update(leftStickHeld);
 
             int viewStep = viewStick.Update(leftStick.x, leftStick.y);
             // Vertical gestures must not also browse tables on diagonal pushes.
@@ -131,6 +139,7 @@ namespace VRLauncher
             else if (nav > 0) Next?.Invoke();
             if (letterStep != 0) JumpLetter?.Invoke(letterStep);
             if (favorite) ToggleFavorite?.Invoke();
+            if (details) ToggleDetails?.Invoke();
             if (view || viewStep > 0) CycleView?.Invoke();
             else if (viewStep < 0) PreviousView?.Invoke();
             // Reveal the pick before launch, even if click and A arrive together.
