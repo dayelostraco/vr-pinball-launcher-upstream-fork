@@ -95,6 +95,11 @@ if ($Deploy) {
     Write-Host "Deploying to $dst"
     foreach ($dir in @('vr-launch_Data', 'MonoBleedingEdge', 'D3D12')) {
         $target = Join-Path $dst $dir
+        $resolvedTarget = [IO.Path]::GetFullPath($target)
+        $resolvedInstall = [IO.Path]::GetFullPath($dst).TrimEnd('\') + '\'
+        if (-not $resolvedTarget.StartsWith($resolvedInstall, [StringComparison]::OrdinalIgnoreCase)) {
+            throw "Runtime target is outside the launcher installation: $resolvedTarget"
+        }
         if (Test-Path $target) { Remove-Item $target -Recurse -Force }
         $source = Join-Path $BuildDir $dir
         if (Test-Path $source) { Copy-Item $source -Destination $dst -Recurse -Force }

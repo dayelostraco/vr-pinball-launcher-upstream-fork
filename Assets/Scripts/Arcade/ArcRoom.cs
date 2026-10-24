@@ -29,6 +29,7 @@ namespace VRLauncher
         private TextMeshPro infoTitle;
         private TextMeshPro infoDetail;
         private TextMeshPro infoStatus;
+        private TextMeshPro viewTabs;
         private GameObject detailsPanel;
         private TextMeshPro detailsTitle;
         private TextMeshPro detailsBody;
@@ -48,6 +49,7 @@ namespace VRLauncher
         public string InfoTitle => infoTitle.text;
         public string InfoDetail => infoDetail.text;
         public string InfoStatus => infoStatus.text;
+        public string ViewTabs => viewTabs.text;
         public bool DetailsVisible => detailsPanel.activeSelf;
         public string DetailsText => detailsBody.text;
 
@@ -107,8 +109,10 @@ namespace VRLauncher
             plate.SetParent(transform, false);
             plate.localPosition = ArcLayout.SlotPosition(0f) + InfoPlateOffset;
             plate.localRotation = Quaternion.Euler(25f, 0f, 0f);
-            PanelQuad(plate, "PlateBackground", Vector3.forward * 0.012f, new Vector2(1.2f, 0.55f), new Color(0.025f, 0.035f, 0.05f));
-            PanelQuad(plate, "AccentRule", new Vector3(0f, 0.263f, 0.005f), new Vector2(1.2f, 0.006f), new Color(0.25f, 0.7f, 0.85f));
+            PanelQuad(plate, "PlateBackground", new Vector3(0f, 0.055f, 0.012f), new Vector2(1.2f, 0.66f), new Color(0.025f, 0.035f, 0.05f));
+            PanelQuad(plate, "AccentRule", new Vector3(0f, 0.38f, 0.005f), new Vector2(1.2f, 0.006f), new Color(0.25f, 0.7f, 0.85f));
+            viewTabs = PlateLine(plate, "ViewTabs", 0.31f, new Vector2(1.1f, 0.07f));
+            viewTabs.fontSizeMax = 2.1f;
             infoTitle = PlateLine(plate, "Title", 0.17f, new Vector2(1.1f, 0.13f));
             infoTitle.fontStyle = FontStyles.Bold;
             infoTitle.fontSizeMax = 4.5f;
@@ -188,16 +192,9 @@ namespace VRLauncher
             detailsPanel = new GameObject("TableDetails");
             Transform panel = detailsPanel.transform;
             panel.SetParent(transform, false);
-            panel.localPosition = ArcLayout.SlotPosition(0f) + new Vector3(0.85f, 1.15f, -0.65f);
-            panel.localRotation = Quaternion.Euler(0f, 20f, 0f);
-
-            GameObject backing = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            Collider collider = backing.GetComponent<Collider>();
-            if (Application.isPlaying) Destroy(collider); else DestroyImmediate(collider);
-            backing.transform.SetParent(panel, false);
-            backing.transform.localPosition = new Vector3(0f, 0f, 0.01f);
-            backing.transform.localScale = new Vector3(0.86f, 0.72f, 1f);
-            backing.GetComponent<MeshRenderer>().sharedMaterial = new Material(Shader.Find("Sprites/Default")) { color = new Color(0.025f, 0.04f, 0.055f) };
+            panel.localPosition = ArcLayout.SlotPosition(0f) + new Vector3(1.15f, 1.22f, -0.9f);
+            panel.localRotation = Quaternion.Euler(0f, 35f, 0f);
+            PanelQuad(panel, "DetailsBackground", new Vector3(0f, 0f, 0.012f), new Vector2(0.86f, 0.72f), new Color(0.025f, 0.04f, 0.055f));
 
             detailsTitle = PlateLine(panel, "DetailsTitle", 0.23f, new Vector2(0.76f, 0.15f));
             detailsTitle.textWrappingMode = TextWrappingModes.Normal;
@@ -321,6 +318,10 @@ namespace VRLauncher
             infoTitle.text = entry?.Title ?? view.EmptyMessage;
             infoDetail.text = entry == null ? string.Empty : DetailLine(entry);
             infoStatus.text = notice ?? view.PositionLabel;
+            viewTabs.text = string.Join("   ", new[] { ViewKind.All, ViewKind.Favorites, ViewKind.Recent }
+                .Select(kind => kind == view.Kind
+                    ? "<color=#7DE3FF><b>[ " + kind.ToString().ToUpperInvariant() + " ]</b></color>"
+                    : "<color=#8994A3>" + kind.ToString().ToUpperInvariant() + "</color>"));
             if (entry == null) detailsOpen = false;
             detailsPanel.SetActive(detailsOpen && !suspended);
             if (entry != null && detailsOpen)

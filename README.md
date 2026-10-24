@@ -232,6 +232,9 @@ and position.
 
 The selected cabinet has a warm spotlight and a subtle cyan floor marker.
 A raised info panel separates the larger title, metadata, and view indicator.
+The All / Favorites / Recent tabs above the title highlight the active view.
+The details panel sits farther to the right and closer to the viewer to keep
+it clear of the selection panel.
 Two compact hint groups, Navigate and Play & Explore, describe browsing,
 letter jumps, view switching, stick-click actions, play, favorites, and quit.
 They remain visible in all views, including empty Favorites and Recent lists.

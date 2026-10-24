@@ -70,7 +70,17 @@ namespace VRLauncher.EditorTools
         /// <summary>The whole room from a standing player's eyes, headset-like field of view.</summary>
         public static void RenderArc()
         {
-            Run("preview-arc.png", () =>
+            RenderRoom(false);
+        }
+
+        public static void RenderArcDetails()
+        {
+            RenderRoom(true);
+        }
+
+        private static void RenderRoom(bool details)
+        {
+            Run(details ? "preview-arc-details.png" : "preview-arc.png", () =>
             {
                 List<TableEntry> tables = LoadInstalledCatalog();
                 string stateFile = Path.Combine(Path.GetTempPath(), "vrl-preview-state.json");
@@ -83,6 +93,7 @@ namespace VRLauncher.EditorTools
                 ArcRoom room = ArcRoom.Create(view, state, host.AddComponent<MediaCache>(), InstalledCoinDoor());
                 var head = new Vector3(0f, 1.66f, 0f);
                 room.Recenter(head, 0f);
+                if (details) room.ToggleDetails();
                 return MakeCamera(head, Quaternion.Euler(15f, 0f, 0f), 100f);
             });
         }

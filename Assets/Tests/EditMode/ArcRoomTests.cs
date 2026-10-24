@@ -52,6 +52,7 @@ namespace VRLauncher.Tests
             Assert.AreSame(all[9], room.CabinetAt(-1).Entry);
             Assert.AreEqual(all[0].Title, room.InfoTitle);
             Assert.AreEqual("All · 1 / 10", room.InfoStatus);
+            StringAssert.Contains("[ ALL ]", room.ViewTabs);
         }
 
         [Test]
@@ -91,6 +92,9 @@ namespace VRLauncher.Tests
             Assert.AreEqual(1, ActiveCabinets());
             Assert.AreEqual("No favorites yet", room.CabinetAt(0).PlaceholderText);
             Assert.AreEqual("No favorites yet", room.InfoTitle);
+            StringAssert.Contains("[ FAVORITES ]", room.ViewTabs);
+            room.CycleView();
+            StringAssert.Contains("[ RECENT ]", room.ViewTabs);
         }
 
         [Test]
