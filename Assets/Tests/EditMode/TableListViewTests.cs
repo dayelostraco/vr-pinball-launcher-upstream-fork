@@ -60,6 +60,38 @@ namespace VRLauncher.Tests
         };
 
         [Test]
+        public void RandomSelection_StaysInCurrentViewAndAvoidsCurrentTable()
+        {
+            var all = TestEntries.Make(5);
+            state.ToggleFavorite(all[1].RelativePath);
+            state.ToggleFavorite(all[3].RelativePath);
+            var view = new TableListView(all, state);
+            view.CycleView();
+            var random = new Random(42);
+            for (int i = 0; i < 20; i++)
+            {
+                var before = view.Selected;
+                view.SelectRandom(random);
+                Assert.AreNotSame(before, view.Selected);
+                Assert.IsTrue(state.IsFavorite(view.Selected.RelativePath));
+                Assert.AreEqual(ViewKind.Favorites, view.Kind);
+            }
+            Assert.AreEqual(0, state.PlayCount(all[1].RelativePath));
+        }
+
+        [Test]
+        public void RandomSelection_EmptyAndSingleViewsAreSafe()
+        {
+            var all = TestEntries.Make(1);
+            var view = new TableListView(all, state);
+            view.SelectRandom(new Random(42));
+            Assert.AreSame(all[0], view.Selected);
+            view.CycleView();
+            view.SelectRandom(new Random(42));
+            Assert.IsNull(view.Selected);
+        }
+
+        [Test]
         public void LetterJump_SkipsSameLetterAndMissingLettersAndWraps()
         {
             var view = new TableListView(LetterEntries(), state);

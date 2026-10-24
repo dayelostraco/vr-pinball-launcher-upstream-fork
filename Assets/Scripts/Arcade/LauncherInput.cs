@@ -28,6 +28,7 @@ namespace VRLauncher
         private const int VK_RIGHT = 0x27;
         private const int VK_F = 0x46;
         private const int VK_V = 0x56;
+        private const int VK_R = 0x52;
 
         public const float QuitHoldSeconds = 2f;
 
@@ -38,6 +39,7 @@ namespace VRLauncher
         public event Action CycleView;
         public event Action PreviousView;
         public event Action<int> JumpLetter;
+        public event Action SurpriseMe;
         public event Action Quit;
 
         public bool InputEnabled { get; set; } = true;
@@ -50,6 +52,7 @@ namespace VRLauncher
         private readonly ButtonEdge aButton = new ButtonEdge();
         private readonly ButtonEdge bButton = new ButtonEdge();
         private readonly ButtonEdge xButton = new ButtonEdge();
+        private readonly ButtonEdge rightStickClick = new ButtonEdge();
         private readonly StickRepeat stick = new StickRepeat();
         private readonly ViewStickLatch viewStick = new ViewStickLatch();
         private readonly ViewStickLatch letterStick = new ViewStickLatch();
@@ -85,11 +88,13 @@ namespace VRLauncher
             bool favorite = KeyEdge(VK_F);
             bool view = KeyEdge(VK_V);
             bool quit = KeyEdge(VK_ESCAPE);
+            bool surprise = KeyEdge(VK_R);
 
             float stickX = 0f;
             Vector2 leftStick = Vector2.zero;
             Vector2 rightStick = Vector2.zero;
             bool yHeld = false;
+            bool rightStickHeld = false;
 
             if (left.isValid)
             {
@@ -109,7 +114,10 @@ namespace VRLauncher
                 if (right.TryGetFeatureValue(XRCommonUsages.primaryButton, out bool a) && aButton.Update(a)) launch = true;
                 if (right.TryGetFeatureValue(XRCommonUsages.secondaryButton, out bool b) && bButton.Update(b)) favorite = true;
                 if (right.TryGetFeatureValue(XRCommonUsages.primary2DAxis, out Vector2 rs)) rightStick = rs;
+                rightStickHeld = right.TryGetFeatureValue(XRCommonUsages.primary2DAxisClick, out bool clicked) && clicked;
             }
+
+            surprise |= rightStickClick.Update(rightStickHeld);
 
             int letterStep = letterStick.Update(rightStick.x, rightStick.y);
             if (Mathf.Abs(rightStick.x) >= Mathf.Abs(rightStick.y) && Mathf.Abs(rightStick.x) > Mathf.Abs(stickX)) stickX = rightStick.x;
@@ -125,7 +133,9 @@ namespace VRLauncher
             if (favorite) ToggleFavorite?.Invoke();
             if (view || viewStep > 0) CycleView?.Invoke();
             else if (viewStep < 0) PreviousView?.Invoke();
-            if (launch) Launch?.Invoke();
+            // Reveal the pick before launch, even if click and A arrive together.
+            if (surprise) SurpriseMe?.Invoke();
+            else if (launch) Launch?.Invoke();
             if (quit) Quit?.Invoke();
         }
 

@@ -48,6 +48,14 @@ namespace VRLauncher
             if (items.Count > 0) SelectedIndex = (SelectedIndex - 1 + items.Count) % items.Count;
         }
 
+        /// <summary>Picks another table within the current view without launching it.</summary>
+        public void SelectRandom(Random random)
+        {
+            if (items.Count < 2) return;
+            int pick = random.Next(items.Count - 1);
+            SelectedIndex = pick >= SelectedIndex ? pick + 1 : pick;
+        }
+
         /// <summary>Jumps alphabetically within this view without changing its sort order.</summary>
         public void JumpLetter(int direction)
         {

@@ -230,8 +230,8 @@ plate under the centered cabinet shows the title, manufacturer and year, a
 star if it's a favorite, how many times it has been played, when it was last played, and the current view name
 and position.
 
-Three compact control-hint lines beneath the info plate describe left-stick
-table/view navigation, right-stick letter jumps, and the A/B/X/Y actions.
+Four compact control-hint lines beneath the info plate describe left-stick
+table/view navigation, right-stick letter jumps, the A/B/X/Y actions, and Surprise Me.
 They remain visible in all views, including empty Favorites and Recent lists.
 
 ### Controls
@@ -244,6 +244,7 @@ They remain visible in all views, including empty Favorites and Recent lists.
 | X | Cycle view: All, Favorites, Recent |
 | Left thumbstick down / up | Next / previous view (release to center between changes) |
 | Right thumbstick down / up | Next / previous starting letter (release to center between jumps) |
+| Right thumbstick click / keyboard R | Surprise Me: select a random table in the current view |
 | Hold Y 2 s | Quit (with countdown on the info plate) |
 | Keyboard Left Shift / Left Arrow | Previous table |
 | Keyboard Right Shift / Right Arrow | Next table |
@@ -274,6 +275,12 @@ within the current view, wrapping at either end. Numbers and symbols share a
 `#` group. Each jump selects the alphabetically first title in that group;
 Recent keeps its existing newest-first order. Hold does not repeat: return the
 stick to center between jumps. Right-stick left/right still browses tables.
+
+Click the right thumbstick (or press keyboard R) for Surprise Me. It selects
+another table from the current view and shows its normal preview; press A to
+launch after reviewing the pick. It leaves empty views and single-table views
+unchanged. Holding the click does not repeat, and the current table is excluded
+when there is another choice.
 
 ### State file
 

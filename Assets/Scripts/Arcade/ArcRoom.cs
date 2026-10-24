@@ -38,6 +38,7 @@ namespace VRLauncher
         private string videoPath;
         private float videoCountdown = -1f;
         private bool suspended;
+        private readonly System.Random random = new System.Random();
 
         public float ScrollOffset => scroll;
         public string InfoTitle => infoTitle.text;
@@ -106,6 +107,7 @@ namespace VRLauncher
             ControlHint(plate, "BrowseHint", -0.115f, "Left stick: sideways = tables, up/down = views");
             ControlHint(plate, "LetterHint", -0.155f, "Right stick up/down: jump letters");
             ControlHint(plate, "ButtonHint", -0.195f, "A: play · B: favorite · X: views · Hold Y: quit");
+            ControlHint(plate, "SurpriseHint", -0.235f, "Click right stick: Surprise Me (then A to play)");
 
             videoTexture = new RenderTexture(1920, 1080, 0) { name = "PlayfieldVideo" };
             video = gameObject.AddComponent<VideoPlayer>();
@@ -144,6 +146,14 @@ namespace VRLauncher
         public void JumpLetter(int direction)
         {
             view.JumpLetter(direction);
+            scroll = 0f;
+            scrollVelocity = 0f;
+            Assign();
+        }
+
+        public void SurpriseMe()
+        {
+            view.SelectRandom(random);
             scroll = 0f;
             scrollVelocity = 0f;
             Assign();

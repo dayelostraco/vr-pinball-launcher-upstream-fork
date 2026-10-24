@@ -79,6 +79,7 @@ namespace VRLauncher
             input.CycleView += room.CycleView;
             input.PreviousView += room.PreviousView;
             input.JumpLetter += room.JumpLetter;
+            input.SurpriseMe += room.SurpriseMe;
             input.ToggleFavorite += ToggleFavorite;
             input.Launch += () => StartCoroutine(LaunchSelected());
             input.Quit += Quit;
