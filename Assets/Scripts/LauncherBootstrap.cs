@@ -74,12 +74,12 @@ namespace VRLauncher
 
             input = gameObject.AddComponent<LauncherInput>();
             input.InputEnabled = false;
-            input.Previous += room.Previous;
-            input.Next += room.Next;
-            input.CycleView += room.CycleView;
-            input.PreviousView += room.PreviousView;
-            input.JumpLetter += room.JumpLetter;
-            input.SurpriseMe += room.SurpriseMe;
+            input.Previous += () => { room.ClearNotice(); room.Previous(); };
+            input.Next += () => { room.ClearNotice(); room.Next(); };
+            input.CycleView += () => { room.ClearNotice(); room.CycleView(); };
+            input.PreviousView += () => { room.ClearNotice(); room.PreviousView(); };
+            input.JumpLetter += direction => { room.ClearNotice(); room.JumpLetter(direction); };
+            input.SurpriseMe += () => { room.ClearNotice(); room.SurpriseMe(); };
             input.ToggleDetails += room.ToggleDetails;
             input.ToggleFavorite += ToggleFavorite;
             input.Launch += () => StartCoroutine(LaunchSelected());
@@ -106,7 +106,7 @@ namespace VRLauncher
         }
 
         /// <summary>Waits for the headset, places the room in front of it, and fades in.</summary>
-        private IEnumerator Arrive()
+        private IEnumerator Arrive(string message = null)
         {
             float waited = 0f;
             while (waited < XrReadyTimeoutSeconds && !HeadsetTracked())
@@ -120,8 +120,14 @@ namespace VRLauncher
             Transform head = Camera.main.transform;
             room.Recenter(head.position, head.eulerAngles.y);
             room.Resume();
+            if (message != null)
+            {
+                fader.SetImmediate(1f, message);
+                yield return new WaitForSecondsRealtime(1.2f);
+            }
             yield return fader.Fade(0f, FadeSeconds);
             input.InputEnabled = true;
+            Debug.Log("Launcher ready: navigation enabled");
         }
 
         /// <summary>
@@ -183,8 +189,9 @@ namespace VRLauncher
 
             launching = true;
             input.InputEnabled = false;
+            room.ClearNotice();
             room.PulseCenter();
-            yield return fader.Fade(1f, FadeSeconds, $"Loading {entry.Title}…");
+            yield return fader.Fade(1f, FadeSeconds, $"Starting {entry.Title}…\nHanding the headset to VPX");
             room.Suspend();
 
             if (launcher.LaunchTable(entry.FullPath))
@@ -194,11 +201,10 @@ namespace VRLauncher
             }
             else
             {
-                room.Resume();
-                room.ShowNotice($"Could not start {entry.Title}. See the log.");
-                yield return fader.Fade(0f, FadeSeconds);
-                input.InputEnabled = true;
+                string reason = (launcher.LastLaunchError ?? "The table could not start.") + " A: retry or browse another table.";
+                room.ShowNotice(reason);
                 launching = false;
+                yield return Arrive(reason);
             }
         }
 
@@ -242,26 +248,23 @@ namespace VRLauncher
 
         private void OnTableExited()
         {
-            // TableLauncher can raise this event twice for one exit (a synchronous call from
-            // KillCurrentTable plus a queued call from the process Exited handler, or a race
-            // between the Update poll and that handler). launchedEntry is cleared after the
-            // first call, so a second call is a no-op instead of double-recording the play or
-            // starting a second, overlapping Arrive() coroutine.
+            // Also guard against duplicate exit notifications from external integrations.
             if (launchedEntry == null) return;
 
             // Fader is already at alpha 1 here, so re-enabling the camera shows black first,
             // then the fade-in in Arrive() reveals the room.
             ExitBackgroundMode();
 
-            state.RecordPlay(launchedEntry.RelativePath, DateTime.UtcNow);
+            if (launcher.LastSessionCounted) state.RecordPlay(launchedEntry.RelativePath, DateTime.UtcNow);
             SaveState();
             launchedEntry = null;
 
             room.ClearNotice();
+            if (launcher.LastReturnNotice != null) room.ShowNotice(launcher.LastReturnNotice);
             room.Refresh();
             fader.SetImmediate(1f, string.Empty);
             launching = false;
-            StartCoroutine(Arrive());
+            StartCoroutine(Arrive(launcher.LastReturnNotice));
         }
 
         private void ToggleFavorite()

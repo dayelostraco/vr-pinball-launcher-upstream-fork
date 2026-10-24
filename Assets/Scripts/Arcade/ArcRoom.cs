@@ -109,7 +109,7 @@ namespace VRLauncher
             plate.SetParent(transform, false);
             plate.localPosition = ArcLayout.SlotPosition(0f) + InfoPlateOffset;
             plate.localRotation = Quaternion.Euler(25f, 0f, 0f);
-            PanelQuad(plate, "PlateBackground", new Vector3(0f, 0.055f, 0.012f), new Vector2(1.2f, 0.66f), new Color(0.025f, 0.035f, 0.05f));
+            PanelQuad(plate, "PlateBackground", new Vector3(0f, 0.12f, 0.012f), new Vector2(1.2f, 0.52f), new Color(0.025f, 0.035f, 0.05f));
             PanelQuad(plate, "AccentRule", new Vector3(0f, 0.38f, 0.005f), new Vector2(1.2f, 0.006f), new Color(0.25f, 0.7f, 0.85f));
             viewTabs = PlateLine(plate, "ViewTabs", 0.31f, new Vector2(1.1f, 0.07f));
             viewTabs.fontSizeMax = 2.1f;
@@ -121,13 +121,14 @@ namespace VRLauncher
             infoDetail.fontSizeMax = 1.8f;
             infoDetail.textWrappingMode = TextWrappingModes.Normal;
             infoDetail.color = new Color(0.77f, 0.83f, 0.88f);
-            infoStatus = PlateLine(plate, "Status", -0.005f, new Vector2(1.08f, 0.045f));
+            infoStatus = PlateLine(plate, "Status", -0.025f, new Vector2(1.08f, 0.075f));
+            infoStatus.textWrappingMode = TextWrappingModes.Normal;
+            infoStatus.fontSizeMax = 1.4f;
             infoStatus.color = new Color(0.45f, 0.8f, 0.9f);
-            PanelQuad(plate, "HintDivider", new Vector3(0f, -0.045f, 0.005f), new Vector2(1.08f, 0.002f), new Color(0.15f, 0.25f, 0.3f));
-            HintGroup(plate, "NavigationHints", -0.275f,
-                "<b>NAVIGATE</b>\nLeft stick sideways: tables\nLeft stick up/down: views\nRight stick up/down: letters");
-            HintGroup(plate, "ActionHints", 0.275f,
-                "<b>PLAY & EXPLORE</b>\nA: play · B: favorite · X: views\nClick L stick: details · R: Surprise Me\nHold Y: quit · A plays your pick");
+            var reminder = PlateLine(plate, "ControlsReminder", -0.105f, new Vector2(1.08f, 0.04f));
+            reminder.text = "A: play · Click left stick: details & controls";
+            reminder.fontSizeMax = 1.3f;
+            reminder.color = new Color(0.68f, 0.76f, 0.82f);
             BuildDetailsPanel();
 
             videoTexture = new RenderTexture(1920, 1080, 0) { name = "PlayfieldVideo" };
@@ -182,7 +183,6 @@ namespace VRLauncher
 
         public void ToggleDetails()
         {
-            if (view.Selected == null) return;
             detailsOpen = !detailsOpen;
             UpdateInfo();
         }
@@ -192,17 +192,21 @@ namespace VRLauncher
             detailsPanel = new GameObject("TableDetails");
             Transform panel = detailsPanel.transform;
             panel.SetParent(transform, false);
-            panel.localPosition = ArcLayout.SlotPosition(0f) + new Vector3(1.15f, 1.22f, -0.9f);
+            panel.localPosition = ArcLayout.SlotPosition(0f) + new Vector3(1.2f, 1.15f, -0.9f);
             panel.localRotation = Quaternion.Euler(0f, 35f, 0f);
-            PanelQuad(panel, "DetailsBackground", new Vector3(0f, 0f, 0.012f), new Vector2(0.86f, 0.72f), new Color(0.025f, 0.04f, 0.055f));
+            PanelQuad(panel, "DetailsBackground", new Vector3(0f, 0f, 0.012f), new Vector2(1.0f, 1.08f), new Color(0.025f, 0.04f, 0.055f));
 
-            detailsTitle = PlateLine(panel, "DetailsTitle", 0.23f, new Vector2(0.76f, 0.15f));
+            detailsTitle = PlateLine(panel, "DetailsTitle", 0.41f, new Vector2(0.9f, 0.15f));
             detailsTitle.textWrappingMode = TextWrappingModes.Normal;
             detailsTitle.color = new Color(0.85f, 0.95f, 1f);
-            detailsBody = PlateLine(panel, "DetailsBody", 0f, new Vector2(0.74f, 0.26f));
+            detailsBody = PlateLine(panel, "DetailsBody", 0.17f, new Vector2(0.88f, 0.26f));
             detailsBody.alignment = TextAlignmentOptions.Left;
             detailsBody.textWrappingMode = TextWrappingModes.Normal;
-            var footer = PlateLine(panel, "DetailsFooter", -0.27f, new Vector2(0.76f, 0.06f));
+            HintGroup(panel, "NavigationHints", -0.225f,
+                "<b>NAVIGATE</b>\nLeft sideways: tables\nLeft up/down: views\nRight up/down: letters");
+            HintGroup(panel, "ActionHints", 0.225f,
+                "<b>PLAY & EXPLORE</b>\nA: play · B: favorite · X: views\nRight click: Surprise Me\nHold Y: quit");
+            var footer = PlateLine(panel, "DetailsFooter", -0.47f, new Vector2(0.9f, 0.06f));
             footer.text = "Click left stick to close · A to play";
             footer.color = new Color(0.65f, 0.75f, 0.8f);
             detailsPanel.SetActive(false);
@@ -216,6 +220,7 @@ namespace VRLauncher
         private void ChangeView(int direction)
         {
             view.CycleView(direction);
+            if (view.Selected == null) detailsOpen = false;
             scroll = 0f;
             scrollVelocity = 0f;
             Assign();
@@ -318,12 +323,17 @@ namespace VRLauncher
             infoTitle.text = entry?.Title ?? view.EmptyMessage;
             infoDetail.text = entry == null ? string.Empty : DetailLine(entry);
             infoStatus.text = notice ?? view.PositionLabel;
+            infoStatus.color = notice == null ? new Color(0.45f, 0.8f, 0.9f) : new Color(1f, 0.8f, 0.45f);
             viewTabs.text = string.Join("   ", new[] { ViewKind.All, ViewKind.Favorites, ViewKind.Recent }
                 .Select(kind => kind == view.Kind
                     ? "<color=#7DE3FF><b>[ " + kind.ToString().ToUpperInvariant() + " ]</b></color>"
                     : "<color=#8994A3>" + kind.ToString().ToUpperInvariant() + "</color>"));
-            if (entry == null) detailsOpen = false;
             detailsPanel.SetActive(detailsOpen && !suspended);
+            if (entry == null && detailsOpen)
+            {
+                detailsTitle.text = "Controls";
+                detailsBody.text = "No table selected.\nUse left stick up/down or X\nto switch views.";
+            }
             if (entry != null && detailsOpen)
             {
                 detailsTitle.text = entry.Title;
@@ -450,7 +460,7 @@ namespace VRLauncher
 
         private static void HintGroup(Transform plate, string name, float x, string label)
         {
-            TextMeshPro hint = PlateLine(plate, name, -0.155f, new Vector2(0.52f, 0.16f));
+            TextMeshPro hint = PlateLine(plate, name, -0.2f, new Vector2(0.43f, 0.22f));
             hint.transform.localPosition += Vector3.right * x;
             hint.text = label;
             hint.alignment = TextAlignmentOptions.TopLeft;

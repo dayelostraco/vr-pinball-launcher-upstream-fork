@@ -153,7 +153,8 @@ namespace VRLauncher.Tests
             room.CycleView();
             Assert.IsFalse(room.DetailsVisible);
             room.ToggleDetails();
-            Assert.IsFalse(room.DetailsVisible);
+            Assert.IsTrue(room.DetailsVisible);
+            StringAssert.Contains("No table selected", room.DetailsText);
         }
 
         [Test]

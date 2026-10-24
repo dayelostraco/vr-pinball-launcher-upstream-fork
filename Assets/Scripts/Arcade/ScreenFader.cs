@@ -41,7 +41,7 @@ namespace VRLauncher
             textObject.transform.SetParent(go.transform, false);
             textObject.transform.localPosition = new Vector3(0f, 0f, -0.01f);
             fader.label = textObject.AddComponent<TextMeshPro>();
-            fader.label.rectTransform.sizeDelta = new Vector2(0.4f, 0.08f);
+            fader.label.rectTransform.sizeDelta = new Vector2(0.48f, 0.14f);
             fader.label.alignment = TextAlignmentOptions.Center;
             fader.label.enableAutoSizing = true;
             fader.label.fontSizeMin = 0.1f;

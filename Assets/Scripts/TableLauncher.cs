@@ -64,6 +64,18 @@ namespace VRLauncher
         private bool isTableRunning = false;
         private string currentTablePath;
         private Keyboard keyboard;
+        private readonly Stopwatch launchClock = new Stopwatch();
+        private LaunchFeedback feedback;
+        private string runtimeLogPath;
+        private long runtimeLogOffset;
+        private string pendingLogLine = "";
+        private float nextLogRead;
+        private bool cancelled;
+        private GUIStyle progressStyle;
+
+        public string LastLaunchError { get; private set; }
+        public string LastReturnNotice { get; private set; }
+        public bool LastSessionCounted { get; private set; }
 
         public delegate void TableExitedHandler();
         public event TableExitedHandler OnTableExited;
@@ -75,9 +87,13 @@ namespace VRLauncher
         /// <returns>True if launch was successful</returns>
         public bool LaunchTable(string tablePath)
         {
+            LastLaunchError = null;
+            LastReturnNotice = null;
+            LastSessionCounted = false;
             if (isTableRunning)
             {
                 UnityEngine.Debug.LogWarning("A table is already running!");
+                LastLaunchError = "Another table is still running.";
                 return false;
             }
 
@@ -85,18 +101,26 @@ namespace VRLauncher
             if (!File.Exists(command.Executable))
             {
                 UnityEngine.Debug.LogError($"VPinballX executable not found: {command.Executable}");
+                LastLaunchError = "The configured VPX program could not be found.";
                 return false;
             }
 
             if (!File.Exists(tablePath))
             {
                 UnityEngine.Debug.LogError($"Table file not found: {tablePath}");
+                LastLaunchError = "This table file could not be found.";
                 return false;
             }
 
             try
             {
                 currentTablePath = tablePath;
+                feedback = new LaunchFeedback(tablePath);
+                cancelled = false;
+                runtimeLogPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VPinballX", "10.8", "vpinball.log");
+                runtimeLogOffset = File.Exists(runtimeLogPath) ? new FileInfo(runtimeLogPath).Length : 0;
+                pendingLogLine = "";
+                launchClock.Restart();
 
                 // Stop Unity's XR session before launching VPinballX
                 UnityEngine.Debug.Log("Stopping Unity XR session before launching table...");
@@ -121,8 +145,7 @@ namespace VRLauncher
                 if (currentProcess != null)
                 {
                     isTableRunning = true;
-                    currentProcess.EnableRaisingEvents = true;
-                    currentProcess.Exited += OnProcessExited;
+                    // Poll on the Unity thread: one exit path, including immediately exiting hosts.
 
                     // Start coroutine to focus the VPinballX window after a delay
                     StartCoroutine(FocusVPinballWindow());
@@ -132,6 +155,8 @@ namespace VRLauncher
                 else
                 {
                     UnityEngine.Debug.LogError("Failed to start process");
+                    LastLaunchError = "Windows could not start the configured VPX program.";
+                    currentTablePath = null;
                     // Restart XR if launch failed
                     StartXR();
                     return false;
@@ -140,23 +165,29 @@ namespace VRLauncher
             catch (System.Exception ex)
             {
                 UnityEngine.Debug.LogError($"Error launching table: {ex.Message}");
+                LastLaunchError = "Windows could not start VPX. See the launch log for details.";
+                currentTablePath = null;
+                StartXR();
                 return false;
             }
         }
 
-        private void OnProcessExited(object sender, System.EventArgs e)
+        private void FinishTable()
         {
+            if (!isTableRunning || currentProcess == null) return;
+            ReadRuntimeLog();
+            int exitCode = currentProcess.HasExited ? currentProcess.ExitCode : -1;
+            launchClock.Stop();
+            LastSessionCounted = feedback.CountSession(exitCode, launchClock.Elapsed.TotalSeconds, cancelled);
+            LastReturnNotice = feedback.ReturnNotice(exitCode, launchClock.Elapsed.TotalSeconds, cancelled);
+            UnityEngine.Debug.Log($"Launch result: {currentTablePath}; exit={exitCode}; seconds={launchClock.Elapsed.TotalSeconds:F1}; startupConfirmed={feedback.StartupCompleted}; cancelled={cancelled}; problem={feedback.Problem}");
             UnityEngine.Debug.Log($"Table exited: {Path.GetFileName(currentTablePath)}");
             isTableRunning = false;
             currentTablePath = null;
-
-            // Restart Unity's XR session after table exits
-            UnityMainThreadDispatcher.Instance.Enqueue(() =>
-            {
-                UnityEngine.Debug.Log("Table exited - Restarting Unity XR session...");
-                StartXR();
-                OnTableExited?.Invoke();
-            });
+            currentProcess.Dispose();
+            currentProcess = null;
+            StartXR();
+            OnTableExited?.Invoke();
         }
 
         /// <summary>
@@ -192,20 +223,16 @@ namespace VRLauncher
 
         void Update()
         {
-            // Check if process has exited (fallback if event doesn't fire)
+            if (isTableRunning && Time.unscaledTime >= nextLogRead)
+            {
+                nextLogRead = Time.unscaledTime + 0.5f;
+                ReadRuntimeLog();
+            }
+            // Process completion is handled once, on the Unity thread.
             if (isTableRunning && currentProcess != null && currentProcess.HasExited)
             {
                 UnityEngine.Debug.Log("Detected table exit via polling");
-                isTableRunning = false;
-                currentTablePath = null;
-
-                // Restart XR here too. The Exited event normally does this, but
-                // when only the poll catches the exit the menu would otherwise
-                // come back with no VR session.
-                UnityEngine.Debug.Log("Table exited (polled) - Restarting Unity XR session...");
-                StartXR();
-
-                OnTableExited?.Invoke();
+                FinishTable();
             }
 
             // Allow manual exit with Backspace - kills VPinballX and returns to
@@ -232,13 +259,15 @@ namespace VRLauncher
         /// </summary>
         public void KillCurrentTable()
         {
+            if (!isTableRunning) return;
+            cancelled = true;
             if (currentProcess != null && !currentProcess.HasExited)
             {
                 try
                 {
                     UnityEngine.Debug.Log("Terminating VPinballX process");
-                    currentProcess.Kill();
-                    currentProcess.WaitForExit(2000); // Wait up to 2 seconds for clean exit
+                    VpxProcessTree.Kill(currentProcess);
+                    currentProcess.WaitForExit(2000);
                 }
                 catch (System.Exception ex)
                 {
@@ -246,14 +275,40 @@ namespace VRLauncher
                 }
             }
 
-            isTableRunning = false;
-            currentTablePath = null;
+            if (currentProcess == null || currentProcess.HasExited) FinishTable();
+        }
 
-            // Restart XR after killing table
-            UnityEngine.Debug.Log("Table killed - Restarting Unity XR session...");
-            StartXR();
+        private void ReadRuntimeLog()
+        {
+            if (feedback == null || runtimeLogPath == null) return;
+            try
+            {
+                using (var stream = new FileStream(runtimeLogPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+                {
+                    if (stream.Length < runtimeLogOffset) { runtimeLogOffset = 0; pendingLogLine = ""; }
+                    stream.Position = runtimeLogOffset;
+                    byte[] bytes = new byte[(int)Math.Min(65536, stream.Length - runtimeLogOffset)];
+                    int count = stream.Read(bytes, 0, bytes.Length);
+                    runtimeLogOffset += count;
+                    string[] lines = (pendingLogLine + System.Text.Encoding.UTF8.GetString(bytes, 0, count)).Split('\n');
+                    for (int i = 0; i < lines.Length - 1; i++) feedback.Observe(lines[i]);
+                    pendingLogLine = lines[lines.Length - 1];
+                }
+            }
+            catch (IOException) { } // Logging is optional; process-exit recovery must still work.
+            catch (UnauthorizedAccessException) { }
+        }
 
-            OnTableExited?.Invoke();
+        private void OnGUI()
+        {
+            // Desktop-only progress: Unity has released XR to VPX. Stop drawing once startup is confirmed.
+            if (!isTableRunning || feedback == null || (feedback.StartupCompleted && feedback.Problem == null)) return;
+            if (progressStyle == null)
+                progressStyle = new GUIStyle(GUI.skin.box) { fontSize = 22, alignment = TextAnchor.MiddleCenter, wordWrap = true };
+            string title = Path.GetFileNameWithoutExtension(currentTablePath);
+            string stage = feedback.Problem ?? (launchClock.Elapsed.TotalSeconds >= 30 ? "Still waiting for VPX startup" : "Starting VPX");
+            GUI.Box(new Rect((Screen.width - 680) / 2f, (Screen.height - 160) / 2f, 680, 160),
+                $"{title}\n{stage} · {launchClock.Elapsed.TotalSeconds:0}s\nBackspace: stop and return to the launcher", progressStyle);
         }
 
         /// <summary>
@@ -438,7 +493,6 @@ namespace VRLauncher
             // Clean up process monitoring
             if (currentProcess != null)
             {
-                currentProcess.Exited -= OnProcessExited;
                 currentProcess.Dispose();
             }
         }
@@ -463,12 +517,8 @@ namespace VRLauncher
                     return;
                 }
 
-                // Drop the handler first: Kill() raises Exited on a pool
-                // thread, which would queue an XR restart mid-shutdown.
-                currentProcess.Exited -= OnProcessExited;
-
                 UnityEngine.Debug.Log($"Terminating VPinballX on {reason}");
-                currentProcess.Kill();
+                VpxProcessTree.Kill(currentProcess);
                 currentProcess.WaitForExit(2000);
             }
             catch (System.Exception ex)

@@ -235,9 +235,10 @@ A raised info panel separates the larger title, metadata, and view indicator.
 The All / Favorites / Recent tabs above the title highlight the active view.
 The details panel sits farther to the right and closer to the viewer to keep
 it clear of the selection panel.
-Two compact hint groups, Navigate and Play & Explore, describe browsing,
-letter jumps, view switching, stick-click actions, play, favorites, and quit.
-They remain visible in all views, including empty Favorites and Recent lists.
+Only a short play/help reminder stays beneath the selected table. Open details
+with left-stick click for the full Navigate and Play & Explore control groups,
+keeping the cabinet artwork prominent while browsing. Controls can also be
+opened when Favorites or Recent is empty.
 
 ### Controls
 
@@ -291,9 +292,10 @@ when there is another choice.
 ### State file
 
 The table-details panel sits beside the selected cabinet and shows manufacturer,
-year, session count, last-played date, and favorite status. It follows selection
-while browsing, hides during play, and closes when a view is empty. Left-stick
-click (or keyboard I) toggles it; all navigation and launch controls still work.
+year, session count, last-played date, favorite status, and the full control guide.
+It follows selection while browsing and hides during play. Switching to an
+empty view closes table details; click again to show controls for that empty
+view. Left-stick click (or keyboard I) toggles it; navigation and launch still work.
 
 On a normal launcher exit, the current view and selected table are saved.
 The next start restores that view and table. If the table was removed or no
@@ -303,7 +305,9 @@ an empty view keeps its placeholder. Existing state files remain compatible.
 The table label shows "Played 0 times", "Played 1 time", or "Played N times"
 using existing play history. Counts increase when you return from a table
 launched through this launcher; they count sessions, not individual games or
-restarts within VPX. Direct VPX launches are not counted.
+restarts within VPX. Failed starts and manually stopped launches are not counted.
+A fresh VPX startup log confirms a session; with unavailable logs, a normal exit
+after at least 15 seconds is used as a fallback. Direct VPX launches are not counted.
 
 Favorites and play history are stored in `state.json` at
 `%USERPROFILE%\AppData\LocalLow\DefaultCompany\vr-launch\state.json`, keyed by
@@ -442,6 +446,24 @@ The bundled bridge ([`auto_oculus_touch`](https://github.com/rajetic/auto_oculus
 - Ensure `searchSubdirectories` is true if tables are in subfolders
 
 ### Table Won't Launch
+
+The launcher shows the selected title and headset handoff before starting VPX.
+While startup is unconfirmed, the launcher desktop window shows elapsed time
+and a Backspace reminder. After 30 seconds it says it is still waiting; it does
+not kill a slow table or claim a percentage complete. The headset is owned by
+VPX during this handoff, so continued launcher progress is desktop-only.
+
+Missing executable/table files, Windows process-start errors, nonzero exits,
+and very short unconfirmed runs return to the room with a useful message.
+Press A to retry the selected table, or browse to clear the notice and choose
+another. XR is restarted even when Windows throws while creating the process.
+The existing Backspace rescue now stops child VPX processes as well as wrappers.
+
+Startup confirmation is read only from fresh lines for the selected table in
+`%APPDATA%\VPinballX\10.8\vpinball.log`; it confirms VPX initialization, not
+that a ROM has finished booting or that gameplay is healthy. Other log locations
+fall back to process-based recovery. The Unity `Player.log` records launch
+duration, exit code, confirmation, cancellation, and detected script/ROM problems.
 
 - Verify `vpinballExecutable` path is correct
 - Make sure VPinballX_GL64.exe exists at that location
