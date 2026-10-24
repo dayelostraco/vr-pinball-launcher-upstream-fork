@@ -47,6 +47,34 @@ namespace VRLauncher.Tests
         }
 
         [Test]
+        public void Browsing_SurvivesSaveAndLoadWithoutLosingHistory()
+        {
+            var state = LauncherState.Load(file);
+            state.ToggleFavorite("a.vpx");
+            state.RecordPlay("a.vpx", Noon);
+            state.RememberBrowsing(ViewKind.Favorites, "a.vpx");
+            state.Save();
+            var restored = LauncherState.Load(file);
+            Assert.AreEqual(ViewKind.Favorites, restored.LastView);
+            Assert.AreEqual("a.vpx", restored.LastSelectedPath);
+            Assert.IsTrue(restored.IsFavorite("a.vpx"));
+            Assert.AreEqual(1, restored.PlayCount("a.vpx"));
+        }
+
+        [Test]
+        public void Browsing_OldStateDefaultsToAllAndInvalidViewIsSafe()
+        {
+            Directory.CreateDirectory(dir);
+            File.WriteAllText(file, "{\"version\":1,\"favorites\":[],\"plays\":[]}");
+            var state = LauncherState.Load(file);
+            Assert.AreEqual(ViewKind.All, state.LastView);
+            Assert.IsNull(state.LastSelectedPath);
+            state.RememberBrowsing((ViewKind)99, "gone.vpx");
+            state.Save();
+            Assert.AreEqual(ViewKind.All, LauncherState.Load(file).LastView);
+        }
+
+        [Test]
         public void RecordPlay_TracksCountAndLastPlayed()
         {
             LauncherState state = LauncherState.Load(file);

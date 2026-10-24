@@ -275,6 +275,7 @@ namespace VRLauncher
         {
             try
             {
+                state.RememberBrowsing(view.Kind, view.Selected?.RelativePath);
                 state.Save();
             }
             catch (Exception ex)
@@ -292,6 +293,11 @@ namespace VRLauncher
 #else
             Application.Quit();
 #endif
+        }
+
+        private void OnApplicationQuit()
+        {
+            if (state != null && view != null) SaveState();
         }
 
         private T GetOrAdd<T>() where T : Component

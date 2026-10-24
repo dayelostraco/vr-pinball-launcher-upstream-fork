@@ -33,6 +33,23 @@ namespace VRLauncher.Tests
             Assert.AreEqual(0, view.SelectedIndex);
         }
 
+        [Test]
+        public void Startup_RestoresFavoriteSelectionAndHandlesRemovedTables()
+        {
+            var all = TestEntries.Make(3);
+            state.ToggleFavorite(all[1].RelativePath);
+            state.ToggleFavorite(all[2].RelativePath);
+            state.RememberBrowsing(ViewKind.Favorites, all[2].RelativePath);
+            var view = new TableListView(all, state);
+            Assert.AreEqual(ViewKind.Favorites, view.Kind);
+            Assert.AreSame(all[2], view.Selected);
+            state.RememberBrowsing(ViewKind.Favorites, "removed.vpx");
+            Assert.AreSame(all[1], new TableListView(all, state).Selected);
+            state.ToggleFavorite(all[1].RelativePath);
+            state.ToggleFavorite(all[2].RelativePath);
+            Assert.IsNull(new TableListView(all, state).Selected);
+        }
+
         private static List<TableEntry> LetterEntries() => new List<TableEntry>
         {
             new TableEntry("1.vpx", "1.vpx", "1", "2001", null, 0, null),

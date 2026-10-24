@@ -31,6 +31,8 @@ namespace VRLauncher
             public int version = CurrentVersion;
             public List<string> favorites = new List<string>();
             public List<PlayRecord> plays = new List<PlayRecord>();
+            public int lastView;
+            public string lastSelectedPath;
         }
 
         private readonly StateData data;
@@ -111,6 +113,15 @@ namespace VRLauncher
         }
 
         public bool IsFavorite(string relativePath) => data.favorites.Contains(relativePath);
+
+        public ViewKind LastView => Enum.IsDefined(typeof(ViewKind), data.lastView) ? (ViewKind)data.lastView : ViewKind.All;
+        public string LastSelectedPath => data.lastSelectedPath;
+
+        public void RememberBrowsing(ViewKind kind, string relativePath)
+        {
+            data.lastView = (int)kind;
+            data.lastSelectedPath = relativePath;
+        }
 
         /// <summary>Flips the favorite flag and returns the new value.</summary>
         public bool ToggleFavorite(string relativePath)

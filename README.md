@@ -277,6 +277,11 @@ stick to center between jumps. Right-stick left/right still browses tables.
 
 ### State file
 
+On a normal launcher exit, the current view and selected table are saved.
+The next start restores that view and table. If the table was removed or no
+longer belongs in that view, selection falls back to the first table there;
+an empty view keeps its placeholder. Existing state files remain compatible.
+
 The table label shows "Played 0 times", "Played 1 time", or "Played N times"
 using existing play history. Counts increase when you return from a table
 launched through this launcher; they count sessions, not individual games or

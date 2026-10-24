@@ -33,7 +33,9 @@ namespace VRLauncher
             this.all = all;
             this.state = state;
             byPath = all.GroupBy(e => e.RelativePath).ToDictionary(g => g.Key, g => g.First());
+            Kind = state.LastView;
             Rebuild(null, 0);
+            Select(state.LastSelectedPath);
         }
 
         public void Next()
